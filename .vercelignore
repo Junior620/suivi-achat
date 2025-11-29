@@ -1,0 +1,15 @@
+backend/
+venv/
+.env
+.env.local
+*.pyc
+__pycache__/
+*.db
+*.sqlite
+*.log
+.vscode/
+.idea/
+.DS_Store
+docker-compose.yml
+*.md
+!README.md

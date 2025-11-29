@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application - Gestion Cacao</title>
+    <link rel="icon" type="image/png" href="assets/feve-de-cacao.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8B4513">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CocoaTrack">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.0/dist/css/tabulator.min.css">
+    <link rel="stylesheet" href="css/styles.css?v=2">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="assets/feve-de-cacao.png" alt="Fève de cacao" style="height: 40px; margin-right: 10px;">
+                <h2>Cacao</h2>
+                <button class="notification-btn" onclick="loadPage('notifications')" title="Notifications">
+                    📬
+                    <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#deliveries" class="nav-item active" data-page="deliveries">📦 Livraisons</a>
+                <a href="#planters" class="nav-item" data-page="planters">👨‍🌾 Planteurs</a>
+                <a href="#chef-planteurs" class="nav-item" data-page="chef-planteurs">👨‍🌾 Fournisseurs</a>
+                <a href="#analytics-planter" class="nav-item" data-page="analytics-planter">📊 Synthèse Planteur</a>
+                <a href="#analytics-fournisseur" class="nav-item" data-page="analytics-fournisseur">🏢 Synthèse Fournisseur</a>
+                <a href="#analytics-zones" class="nav-item" data-page="analytics-zones">🗺️ Synthèse Zones</a>
+                <a href="#analytics-quality" class="nav-item" data-page="analytics-quality">⭐ Synthèse Qualité</a>
+                <a href="#collectes" class="nav-item" data-page="collectes">🚚 Collectes</a>
+                <a href="#cooperatives" class="nav-item" data-page="cooperatives">🏢 Coopératives</a>
+                <a href="#notifications" class="nav-item" data-page="notifications">📬 Notifications</a>
+                <a href="#admin" class="nav-item admin-only" data-page="admin">⚙️ Administration</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div id="userInfo"></div>
+                <button id="logoutBtn" class="btn btn-secondary">Déconnexion</button>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <div id="pageContent"></div>
+        </main>
+    </div>
+    
+    <div id="toast" class="toast"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/deliveries.js"></script>
+    <script src="js/collectes.js"></script>
+    <script src="js/planters.js"></script>
+    <script src="js/chef_planteurs.js"></script>
+    <script src="js/analytics.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/cooperatives.js"></script>
+    <script src="js/offline.js"></script>
+</body>
+</html>
