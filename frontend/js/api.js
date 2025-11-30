@@ -326,7 +326,7 @@ class API {
     // Notifications
     async getNotifications(unreadOnly = false) {
         const params = unreadOnly ? '?unread_only=true' : '';
-        return this.request(`/notifications${params}`);
+        return this.request(`/notifications/${params}`);
     }
 
     async getNotificationStats() {
