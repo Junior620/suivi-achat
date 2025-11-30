@@ -4,12 +4,14 @@ const OFFLINE_QUEUE = 'offline-queue';
 
 // Fichiers à mettre en cache
 const STATIC_ASSETS = [
+    '/',
     '/app.html',
     '/index.html',
     '/css/styles.css',
     '/css/auth.css',
     '/js/api.js',
     '/js/app.js',
+    '/js/auth.js',
     '/js/planters.js',
     '/js/chef_planteurs.js',
     '/js/deliveries.js',
@@ -18,7 +20,9 @@ const STATIC_ASSETS = [
     '/js/analytics.js',
     '/js/admin.js',
     '/js/notifications.js',
-    '/assets/feve-de-cacao.png'
+    '/js/offline.js',
+    '/assets/feve-de-cacao.png',
+    '/manifest.json'
 ];
 
 // Installation du Service Worker
