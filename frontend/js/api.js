@@ -42,13 +42,16 @@ class API {
         try {
             const response = await fetch(url, config);
             if (response.status === 401) {
-                localStorage.clear();
-                window.location.href = 'index.html';
-                return;
+                // Si c'est la page de login, ne pas rediriger
+                if (!endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                    return;
+                }
             }
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.detail || 'Request failed');
+                throw new Error(error.detail || 'Email ou mot de passe incorrect');
             }
             if (response.headers.get('content-type')?.includes('application/json')) {
                 return await response.json();
