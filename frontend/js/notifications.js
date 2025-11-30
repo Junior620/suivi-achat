@@ -193,7 +193,8 @@ function connectNotificationStream() {
     const token = api.getToken();
     if (!token) return;
     
-    const API_BASE = `http://${window.location.hostname}:8000/api/v1`;
+    // Utiliser la même URL que l'API
+    const API_BASE = api.baseUrl;
     eventSource = new EventSource(`${API_BASE}/sse/notifications?token=${token}`);
     
     eventSource.onmessage = (event) => {
