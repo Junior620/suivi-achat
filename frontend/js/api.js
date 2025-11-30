@@ -4,7 +4,7 @@
 const getApiBaseUrl = () => {
     // Si on est sur Vercel (domaine .vercel.app)
     if (window.location.hostname.includes('vercel.app')) {
-        return 'https://cocoatrack-api.azurewebsites.net/api/v1';
+        return 'https://cocoatrack-api-20251129203507.azurewebsites.net/api/v1';
     }
     // Si on est en local
     return `http://${window.location.hostname}:8000/api/v1`;
