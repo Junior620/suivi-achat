@@ -9,7 +9,7 @@ def authenticate_user(db: Session, login_data: LoginRequest) -> User:
     if not user or not verify_password(login_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+            detail="Email ou mot de passe incorrect"
         )
     return user
 
