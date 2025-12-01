@@ -1,4 +1,4 @@
-// Système d'onboarding et tour guidé pour CocoaTrack
+// Système d'onboarding et tour guidé pour CocoaTrack (SANS centre d'aide)
 
 class OnboardingTour {
     constructor() {
@@ -243,7 +243,7 @@ class OnboardingTour {
 
     // Passer le tour
     skip() {
-        if (confirm('Voulez-vous vraiment passer le tutoriel ? Vous pourrez le relancer depuis le menu Aide.')) {
+        if (confirm('Voulez-vous vraiment passer le tutoriel ?')) {
             this.complete();
         }
     }
@@ -351,137 +351,9 @@ class InteractiveTooltips {
     }
 }
 
-// Système d'aide avec vidéos tutoriels
-class HelpSystem {
-    constructor() {
-        this.videos = {
-            'getting-started': {
-                title: 'Démarrage rapide',
-                url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Remplacer par vraie vidéo
-                description: 'Découvrez les fonctionnalités principales de CocoaTrack'
-            },
-            'add-planter': {
-                title: 'Ajouter un planteur',
-                url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-                description: 'Comment enregistrer un nouveau planteur'
-            },
-            'record-delivery': {
-                title: 'Enregistrer une livraison',
-                url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-                description: 'Processus d\'enregistrement d\'une livraison'
-            },
-            'payments': {
-                title: 'Gérer les paiements',
-                url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-                description: 'Comment effectuer et suivre les paiements'
-            }
-        };
-    }
-
-    // Afficher le centre d'aide
-    showHelpCenter() {
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content help-center">
-                <div class="modal-header">
-                    <h2>🎓 Centre d'aide CocoaTrack</h2>
-                    <button onclick="this.closest('.modal-overlay').remove()" class="close-btn">✕</button>
-                </div>
-                <div class="modal-body">
-                    <div class="help-sections">
-                        <div class="help-section">
-                            <h3>📚 Tutoriels vidéo</h3>
-                            <div class="video-grid">
-                                ${Object.keys(this.videos).map(key => {
-                                    const video = this.videos[key];
-                                    return `
-                                        <div class="video-card" onclick="helpSystem.playVideo('${key}')">
-                                            <div class="video-thumbnail">▶️</div>
-                                            <h4>${video.title}</h4>
-                                            <p>${video.description}</p>
-                                        </div>
-                                    `;
-                                }).join('')}
-                            </div>
-                        </div>
-                        
-                        <div class="help-section">
-                            <h3>🎯 Tours guidés</h3>
-                            <div class="tour-list">
-                                <button onclick="onboardingTour.resetAll(); onboardingTour.start('dashboard')" class="tour-btn">
-                                    📊 Tour du tableau de bord
-                                </button>
-                                <button onclick="onboardingTour.resetAll(); onboardingTour.start('planters')" class="tour-btn">
-                                    👨‍🌾 Tour des planteurs
-                                </button>
-                                <button onclick="onboardingTour.resetAll(); onboardingTour.start('deliveries')" class="tour-btn">
-                                    📦 Tour des livraisons
-                                </button>
-                                <button onclick="onboardingTour.resetAll(); onboardingTour.start('payments')" class="tour-btn">
-                                    💰 Tour des paiements
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="help-section">
-                            <h3>❓ FAQ</h3>
-                            <div class="faq-list">
-                                <details>
-                                    <summary>Comment ajouter un nouveau planteur ?</summary>
-                                    <p>Allez dans la section Planteurs, cliquez sur "Ajouter un planteur", remplissez le formulaire et validez.</p>
-                                </details>
-                                <details>
-                                    <summary>Comment enregistrer une livraison ?</summary>
-                                    <p>Dans Livraisons, cliquez sur "Nouvelle livraison", sélectionnez le planteur, entrez les détails et enregistrez.</p>
-                                </details>
-                                <details>
-                                    <summary>Comment exporter les données ?</summary>
-                                    <p>Utilisez les boutons d'export en haut à droite pour télécharger en Excel ou PDF.</p>
-                                </details>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-
-    // Lire une vidéo
-    playVideo(videoKey) {
-        const video = this.videos[videoKey];
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="modal-content video-modal">
-                <div class="modal-header">
-                    <h2>${video.title}</h2>
-                    <button onclick="this.closest('.modal-overlay').remove()" class="close-btn">✕</button>
-                </div>
-                <div class="modal-body">
-                    <div class="video-container">
-                        <iframe 
-                            width="100%" 
-                            height="450" 
-                            src="${video.url}" 
-                            frameborder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                            allowfullscreen>
-                        </iframe>
-                    </div>
-                    <p>${video.description}</p>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-}
-
 // Initialiser les systèmes
 const onboardingTour = new OnboardingTour();
 const interactiveTooltips = new InteractiveTooltips();
-const helpSystem = new HelpSystem();
 
 // Fonction pour démarrer le tour au premier chargement
 function checkFirstVisit() {
