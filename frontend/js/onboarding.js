@@ -485,13 +485,15 @@ const helpSystem = new HelpSystem();
 
 // Fonction pour démarrer le tour au premier chargement
 function checkFirstVisit() {
+    // Ne pas lancer automatiquement pour éviter conflit avec offline-guide
+    // L'utilisateur peut lancer manuellement depuis le bouton d'aide
     const isFirstVisit = !localStorage.getItem('app_visited');
     if (isFirstVisit) {
         localStorage.setItem('app_visited', 'true');
-        // Attendre que la page soit chargée
+        // Afficher une notification discrète
         setTimeout(() => {
-            onboardingTour.start('dashboard');
-        }, 1000);
+            showToast('💡 Cliquez sur 🎓 en bas à droite pour découvrir l\'application', 'info', 5000);
+        }, 3000);
     }
 }
 
