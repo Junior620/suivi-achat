@@ -94,19 +94,39 @@ body {
 }
 
 .sidebar-header {
-    padding: 20px;
+    padding: 15px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 10px;
 }
 
 .sidebar-header h2 {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     margin: 0;
+    white-space: nowrap;
 }
 
 .sidebar-header img {
     object-fit: contain;
+    flex-shrink: 0;
+}
+
+/* Notification buttons */
+.notification-btn {
+    position: relative;
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 6px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.notification-btn:hover {
+    transform: scale(1.1);
 }
 
 .sidebar-nav {
@@ -1003,20 +1023,6 @@ input[type="checkbox"] {
 }
 
 /* Notifications */
-.notification-btn {
-    position: relative;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 8px;
-    margin-left: auto;
-    transition: transform 0.2s;
-}
-
-.notification-btn:hover {
-    transform: scale(1.1);
-}
 
 .notification-badge {
     position: absolute;
