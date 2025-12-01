@@ -605,6 +605,7 @@ window.offlineManager = {
     createOfflineDelivery,
     getOfflineDeliveries,
     getPendingSync,
+    updateSyncBadge,
     
     // Stores
     STORES

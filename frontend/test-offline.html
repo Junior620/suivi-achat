@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mode Offline</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #2D5016;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background: #2D5016;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1F3810;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            color: #27AE60;
+        }
+        .error {
+            color: #C0392B;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test du Mode Offline</h1>
+    
+    <div class="test-section">
+        <h3>1. Initialisation de la base de données</h3>
+        <button onclick="testInitDB()">Initialiser IndexedDB</button>
+        <div id="result-init" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Sauvegarde de données</h3>
+        <button onclick="testSaveData()">Sauvegarder des planteurs</button>
+        <div id="result-save" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Récupération de données</h3>
+        <button onclick="testGetData()">Récupérer les planteurs</button>
+        <div id="result-get" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Création de livraison offline</h3>
+        <button onclick="testOfflineDelivery()">Créer une livraison offline</button>
+        <div id="result-delivery" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>5. File de synchronisation</h3>
+        <button onclick="testPendingSync()">Voir les actions en attente</button>
+        <div id="result-sync" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>6. Nettoyage</h3>
+        <button onclick="testClearDB()">Vider la base de données</button>
+        <div id="result-clear" class="result"></div>
+    </div>
+
+    <script src="js/offline.js"></script>
+    <script>
+        function log(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${isError ? 'error' : 'success'}`;
+        }
+
+        async function testInitDB() {
+            try {
+                const db = await window.offlineManager.saveToLocalDB(
+                    window.offlineManager.STORES.PLANTERS,
+                    { id: 'test-1', name: 'Test Init' }
+                );
+                log('result-init', '✅ Base de données initialisée avec succès!');
+            } catch (error) {
+                log('result-init', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function testSaveData() {
+            try {
+                const testPlanters = [
+                    { id: 1, name: 'Jean Dupont', code: 'P001' },
+                    { id: 2, name: 'Marie Martin', code: 'P002' },
+                    { id: 3, name: 'Pierre Durand', code: 'P003' }
+                ];
+                
+                await window.offlineManager.cachePlanters(testPlanters);
+                log('result-save', `✅ ${testPlanters.length} planteurs sauvegardés!\n${JSON.stringify(testPlanters, null, 2)}`);
+            } catch (error) {
+                log('result-save', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function testGetData() {
+            try {
+                const planters = await window.offlineManager.getFromLocalDB(
+                    window.offlineManager.STORES.PLANTERS
+                );
+                log('result-get', `✅ ${planters.length} planteurs récupérés!\n${JSON.stringify(planters, null, 2)}`);
+            } catch (error) {
+                log('result-get', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function testOfflineDelivery() {
+            try {
+                const delivery = await window.offlineManager.createOfflineDelivery({
+                    planter_id: 1,
+                    date: '2024-12-01',
+                    quantity_kg: 150.5,
+                    load_location: 'Yaoundé',
+                    unload_location: 'Douala',
+                    cocoa_quality: 'Grade 1'
+                });
+                log('result-delivery', `✅ Livraison offline créée!\n${JSON.stringify(delivery, null, 2)}`);
+            } catch (error) {
+                log('result-delivery', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function testPendingSync() {
+            try {
+                const pending = await window.offlineManager.getPendingSync();
+                log('result-sync', `✅ ${pending.length} action(s) en attente de synchronisation!\n${JSON.stringify(pending, null, 2)}`);
+            } catch (error) {
+                log('result-sync', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function testClearDB() {
+            try {
+                await window.offlineManager.clearLocalDB(window.offlineManager.STORES.PLANTERS);
+                await window.offlineManager.clearLocalDB(window.offlineManager.STORES.OFFLINE_DELIVERIES);
+                await window.offlineManager.clearLocalDB(window.offlineManager.STORES.PENDING_SYNC);
+                log('result-clear', '✅ Base de données nettoyée!');
+            } catch (error) {
+                log('result-clear', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>
