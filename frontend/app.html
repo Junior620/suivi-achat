@@ -20,10 +20,16 @@
             <div class="sidebar-header">
                 <img src="assets/feve-de-cacao.png" alt="CocoaTrack" style="height: 50px; margin-right: 10px;">
                 <h2>CocoaTrack</h2>
-                <button class="notification-btn" onclick="loadPage('notifications')" title="Notifications">
-                    📬
-                    <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="notification-btn" onclick="loadPage('notifications')" title="Notifications">
+                        📬
+                        <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
+                    </button>
+                    <button class="notification-btn" onclick="offlineManager.syncNow()" title="Synchroniser les données offline">
+                        🔄
+                        <span id="syncBadge" class="notification-badge" style="display: none; background: #F39C12;">0</span>
+                    </button>
+                </div>
             </div>
             <nav class="sidebar-nav">
                 <a href="#deliveries" class="nav-item active" data-page="deliveries">📦 Livraisons</a>

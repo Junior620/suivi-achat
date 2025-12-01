@@ -59,8 +59,32 @@ class API {
             return response;
         } catch (error) {
             console.error('API Error:', error);
+            
+            // Si offline et que c'est une requête GET, essayer le cache
+            if (!navigator.onLine && options.method !== 'POST' && options.method !== 'PUT' && options.method !== 'DELETE') {
+                console.log('Mode offline : tentative de récupération depuis le cache');
+                return this.getFromCache(endpoint);
+            }
+            
             throw error;
         }
+    }
+    
+    async getFromCache(endpoint) {
+        if (!window.offlineManager) {
+            throw new Error('Offline manager non disponible');
+        }
+        
+        // Déterminer quel store utiliser selon l'endpoint
+        if (endpoint.includes('/planters')) {
+            return await window.offlineManager.getFromLocalDB(window.offlineManager.STORES.PLANTERS);
+        } else if (endpoint.includes('/chef-planteurs')) {
+            return await window.offlineManager.getFromLocalDB(window.offlineManager.STORES.CHEF_PLANTERS);
+        } else if (endpoint.includes('/cooperatives')) {
+            return await window.offlineManager.getFromLocalDB(window.offlineManager.STORES.COOPERATIVES);
+        }
+        
+        throw new Error('Données non disponibles en mode offline');
     }
 
     // Auth

@@ -26,6 +26,19 @@ async function init() {
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
         }
 
+        // Rafraîchir le cache des données pour le mode offline
+        if (window.offlineManager && navigator.onLine) {
+            console.log('🔄 Rafraîchissement du cache pour le mode offline...');
+            window.offlineManager.refreshCache().catch(err => {
+                console.error('Erreur rafraîchissement cache:', err);
+            });
+        }
+        
+        // Mettre à jour le badge de synchronisation
+        if (window.offlineManager) {
+            window.offlineManager.updateSyncBadge?.();
+        }
+
         setupNavigation();
         loadPage('deliveries');
     } catch (error) {

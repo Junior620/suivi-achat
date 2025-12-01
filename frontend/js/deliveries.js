@@ -206,13 +206,32 @@ async function loadDeliveriesPage(container) {
         const data = await api.getDeliveries({ ...currentFilters, size: 1000 });
         
         const planters = await api.getPlanters({ size: 1000 });
-        const planterMap = {};
-        planters.items.forEach(p => planterMap[p.id] = p.name);
         
-        const tableData = data.items.map(d => ({
+        // Mettre en cache les planteurs pour utilisation offline
+        if (window.offlineManager && navigator.onLine) {
+            window.offlineManager.cachePlanters(planters.items || planters);
+        }
+        
+        const planterMap = {};
+        (planters.items || planters).forEach(p => planterMap[p.id] = p.name);
+        
+        let tableData = data.items.map(d => ({
             ...d,
-            planter_name: planterMap[d.planter_id] || 'N/A'
+            planter_name: planterMap[d.planter_id] || 'N/A',
+            synced: true
         }));
+        
+        // Ajouter les livraisons offline non synchronisées
+        if (window.offlineManager) {
+            const offlineDeliveries = await window.offlineManager.getOfflineDeliveries();
+            const offlineData = offlineDeliveries.map(d => ({
+                ...d,
+                id: d.localId,
+                planter_name: planterMap[d.planter_id] || 'N/A',
+                synced: false
+            }));
+            tableData = [...offlineData, ...tableData];
+        }
 
         if (table) {
             table.setData(tableData);
@@ -223,6 +242,9 @@ async function loadDeliveriesPage(container) {
                 pagination: true,
                 paginationSize: 20,
                 columns: [
+                    {title: "Statut", field: "synced", width: 80, formatter: (cell) => {
+                        return cell.getValue() ? '✅' : '⏳ Offline';
+                    }},
                     {title: "Planteur", field: "planter_name"},
                     {title: "Date livr.", field: "date"},
                     {title: "Date charg.", field: "load_date", formatter: (cell) => cell.getValue() || '-'},
@@ -232,7 +254,8 @@ async function loadDeliveriesPage(container) {
                     {title: "Lieu déch.", field: "unload_location"},
                     {title: "Qualité", field: "cocoa_quality"},
                     {title: "Actions", formatter: (cell) => {
-                        const canEdit = currentUser.role !== 'viewer';
+                        const row = cell.getRow().getData();
+                        const canEdit = currentUser.role !== 'viewer' && row.synced;
                         return canEdit ? '<button class="btn-edit">✏️</button> <button class="btn-delete">🗑️</button>' : '';
                     }, cellClick: handleTableAction}
                 ]
@@ -356,8 +379,16 @@ async function loadDeliveriesPage(container) {
                 await api.updateDelivery(editId, formData);
                 showToast('Livraison modifiée');
             } else {
-                await api.createDelivery(formData);
-                showToast('Livraison créée');
+                // Vérifier si on est en mode offline
+                if (!navigator.onLine && window.offlineManager) {
+                    // Créer la livraison en mode offline
+                    await window.offlineManager.createOfflineDelivery(formData);
+                    showToast('✅ Livraison sauvegardée en mode offline. Elle sera synchronisée automatiquement.', 'warning');
+                } else {
+                    // Mode online normal
+                    await api.createDelivery(formData);
+                    showToast('Livraison créée');
+                }
             }
             closeModal();
             loadTable();
