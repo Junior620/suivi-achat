@@ -23,3 +23,4 @@ class Delivery(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
     planter = relationship("Planter", back_populates="deliveries")
+    payments = relationship("Payment", back_populates="delivery", cascade="all, delete-orphan")

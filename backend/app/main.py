@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
-from .routers import auth, users, planters, deliveries, analytics, exports, chef_planteurs, collectes, notifications, sse, cooperatives
+from .routers import auth, users, planters, deliveries, analytics, exports, chef_planteurs, collectes, notifications, sse, cooperatives, payments
 
 app = FastAPI(
     title="Cocoa Delivery Management API",
@@ -28,6 +28,7 @@ app.include_router(exports.router, prefix="/api/v1")
 app.include_router(notifications.router, prefix="/api/v1")
 app.include_router(sse.router, prefix="/api/v1")
 app.include_router(cooperatives.router, prefix="/api/v1")
+app.include_router(payments.router, prefix="/api/v1")
 
 @app.get("/")
 def root():

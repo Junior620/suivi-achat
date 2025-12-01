@@ -24,6 +24,7 @@ class Planter(Base):
     
     deliveries = relationship("Delivery", back_populates="planter", cascade="all, delete-orphan")
     chef_planteur = relationship("ChefPlanteur", back_populates="planteurs")
+    payments = relationship("Payment", back_populates="planter", cascade="all, delete-orphan")
     
     @property
     def limite_production_kg(self):
