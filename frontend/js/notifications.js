@@ -216,11 +216,23 @@ function connectNotificationStream() {
         console.error('Erreur SSE:', error);
         eventSource.close();
         
-        // Reconnecter après 5 secondes
+        // Vérifier si le token est toujours valide avant de reconnecter
+        const currentToken = api.getToken();
+        if (!currentToken || currentToken !== token) {
+            console.log('❌ Token expiré ou changé, arrêt de la reconnexion SSE');
+            return;
+        }
+        
+        // Reconnecter après 10 secondes (augmenté pour réduire la charge)
         setTimeout(() => {
-            console.log('Reconnexion au stream de notifications...');
-            connectNotificationStream();
-        }, 5000);
+            // Double vérification du token avant reconnexion
+            if (api.getToken() === token) {
+                console.log('Reconnexion au stream de notifications...');
+                connectNotificationStream();
+            } else {
+                console.log('❌ Token changé pendant l\'attente, annulation de la reconnexion');
+            }
+        }, 10000);
     };
 }
 

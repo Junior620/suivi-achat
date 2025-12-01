@@ -44,6 +44,10 @@ class API {
             if (response.status === 401) {
                 // Si c'est la page de login, ne pas rediriger
                 if (!endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+                    // Déconnecter SSE avant de nettoyer le localStorage
+                    if (typeof disconnectNotificationStream === 'function') {
+                        disconnectNotificationStream();
+                    }
                     localStorage.clear();
                     window.location.href = 'index.html';
                     return;
