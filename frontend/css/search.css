@@ -1,0 +1,130 @@
+/* Search Results */
+.search-results {
+    margin-top: 20px;
+}
+
+.result-section {
+    margin-bottom: 30px;
+}
+
+.result-section h3 {
+    color: var(--primary);
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--light);
+}
+
+.result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.result-item {
+    padding: 15px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.result-item:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(45, 80, 22, 0.1);
+    transform: translateX(5px);
+}
+
+.result-title {
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 5px;
+}
+
+.result-details {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Advanced Filters */
+.advanced-filters {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--primary);
+}
+
+.advanced-filters h4 {
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+/* Search Input */
+#globalSearchInput {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    transition: all 0.3s;
+}
+
+#globalSearchInput:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(45, 80, 22, 0.1);
+    outline: none;
+}
+
+/* Filter Badge */
+.filter-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--primary);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+.filter-badge .remove {
+    margin-left: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.filter-badge .remove:hover {
+    color: var(--danger);
+}
+
+/* Export Options */
+.export-options {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.export-count {
+    font-size: 0.9rem;
+    color: #666;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}

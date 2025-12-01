@@ -13,6 +13,7 @@
     <meta name="apple-mobile-web-app-title" content="CocoaTrack">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.0/dist/css/tabulator.min.css">
     <link rel="stylesheet" href="css/styles.css?v=2">
+    <link rel="stylesheet" href="css/search.css">
 </head>
 <body>
     <div class="app-container">
@@ -34,6 +35,7 @@
                 </div>
             </div>
             <nav class="sidebar-nav">
+                <a href="#search" class="nav-item" data-page="search">🔍 Recherche</a>
                 <a href="#deliveries" class="nav-item active" data-page="deliveries">📦 Livraisons</a>
                 <a href="#planters" class="nav-item" data-page="planters">👨‍🌾 Planteurs</a>
                 <a href="#chef-planteurs" class="nav-item" data-page="chef-planteurs">👨‍🌾 Fournisseurs</a>
@@ -63,6 +65,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
     <script src="js/api.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/search.js"></script>
     <script src="js/deliveries.js"></script>
     <script src="js/collectes.js"></script>
     <script src="js/planters.js"></script>

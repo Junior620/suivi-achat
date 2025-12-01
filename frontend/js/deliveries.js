@@ -10,8 +10,9 @@ async function loadDeliveriesPage(container) {
                 </div>
             </div>
             
-            <div class="filters">
-                <div class="filter-row">
+            <div class="advanced-filters">
+                <h4>🔍 Filtres Avancés</h4>
+                <div class="filter-grid">
                     <div class="form-group">
                         <label>Date début</label>
                         <input type="date" id="filterFrom" class="filter-input">
@@ -43,8 +44,28 @@ async function loadDeliveriesPage(container) {
                             <option value="Standard">Standard</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Quantité min (kg)</label>
+                        <input type="number" id="filterQuantityMin" class="filter-input" placeholder="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Quantité max (kg)</label>
+                        <input type="number" id="filterQuantityMax" class="filter-input" placeholder="1000" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Planteur</label>
+                        <select id="filterPlanter" class="filter-input">
+                            <option value="">Tous les planteurs</option>
+                        </select>
+                    </div>
                 </div>
-                <button id="applyFiltersBtn" class="btn btn-primary">Appliquer les filtres</button>
+                <div class="filter-actions">
+                    <button id="applyFiltersBtn" class="btn btn-primary">Appliquer les filtres</button>
+                    <button id="clearFiltersBtn" class="btn btn-secondary">Réinitialiser</button>
+                    <button id="exportFilteredExcelBtn" class="btn btn-success">📊 Export filtré Excel</button>
+                    <button id="exportFilteredPdfBtn" class="btn btn-danger">📄 Export filtré PDF</button>
+                    <span id="filterCount" class="export-count" style="display: none;"></span>
+                </div>
             </div>
             
             <div id="deliveriesTable"></div>
@@ -196,9 +217,14 @@ async function loadDeliveriesPage(container) {
     async function loadPlantersSelect() {
         const planters = await api.getPlanters({ size: 1000 });
         const select = document.getElementById('planterId');
+        const filterSelect = document.getElementById('filterPlanter');
+        
         select.innerHTML = '<option value="">Sélectionner...</option>';
+        filterSelect.innerHTML = '<option value="">Tous les planteurs</option>';
+        
         planters.items.forEach(p => {
             select.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+            filterSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
         });
     }
 
@@ -403,10 +429,51 @@ async function loadDeliveriesPage(container) {
             to: document.getElementById('filterTo').value || undefined,
             load: document.getElementById('filterLoad').value || undefined,
             unload: document.getElementById('filterUnload').value || undefined,
-            quality: document.getElementById('filterQuality').value || undefined
+            quality: document.getElementById('filterQuality').value || undefined,
+            quantityMin: document.getElementById('filterQuantityMin').value || undefined,
+            quantityMax: document.getElementById('filterQuantityMax').value || undefined,
+            planter: document.getElementById('filterPlanter').value || undefined
         };
         loadTable();
+        updateFilterCount();
     });
+
+    document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+        document.getElementById('filterFrom').value = '';
+        document.getElementById('filterTo').value = '';
+        document.getElementById('filterLoad').value = '';
+        document.getElementById('filterUnload').value = '';
+        document.getElementById('filterQuality').value = '';
+        document.getElementById('filterQuantityMin').value = '';
+        document.getElementById('filterQuantityMax').value = '';
+        document.getElementById('filterPlanter').value = '';
+        currentFilters = {};
+        loadTable();
+        updateFilterCount();
+    });
+
+    document.getElementById('exportFilteredExcelBtn').addEventListener('click', () => {
+        const url = api.getExportExcelUrl(currentFilters);
+        api.downloadFile(url);
+        showToast('Export Excel en cours...', 'info');
+    });
+
+    document.getElementById('exportFilteredPdfBtn').addEventListener('click', () => {
+        const url = api.getExportPdfUrl(currentFilters);
+        api.downloadFile(url);
+        showToast('Export PDF en cours...', 'info');
+    });
+
+    function updateFilterCount() {
+        const filterCount = document.getElementById('filterCount');
+        const activeFilters = Object.values(currentFilters).filter(v => v !== undefined).length;
+        if (activeFilters > 0) {
+            filterCount.textContent = `${activeFilters} filtre(s) actif(s)`;
+            filterCount.style.display = 'inline-block';
+        } else {
+            filterCount.style.display = 'none';
+        }
+    }
 
     document.getElementById('exportExcelBtn').addEventListener('click', () => {
         const url = api.getExportExcelUrl(currentFilters);

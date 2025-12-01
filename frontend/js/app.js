@@ -78,6 +78,9 @@ function loadPage(page) {
     }
     
     switch(page) {
+        case 'search':
+            loadSearchPage(content);
+            break;
         case 'deliveries':
             loadDeliveriesPage(content);
             break;
