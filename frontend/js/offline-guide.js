@@ -63,33 +63,8 @@ function showOfflineGuide() {
     document.body.appendChild(modal);
 }
 
-// Afficher le guide au premier lancement
-function checkFirstLaunch() {
-    const hasSeenGuide = localStorage.getItem('offline_guide_seen');
-    if (!hasSeenGuide) {
-        setTimeout(() => {
-            showOfflineGuide();
-            localStorage.setItem('offline_guide_seen', 'true');
-        }, 2000);
-    }
-}
+// NE PLUS afficher automatiquement - uniquement via bouton
+// L'utilisateur peut afficher le guide en cliquant sur le bouton dans le header
 
-// Ajouter un bouton d'aide dans le header - DÉSACTIVÉ pour éviter le débordement
-function addOfflineHelpButton() {
-    // Bouton désactivé - le guide s'affiche au premier lancement uniquement
-    // Pour réafficher le guide, l'utilisateur peut supprimer 'offline_guide_seen' du localStorage
-}
-
-// Initialiser au chargement
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        checkFirstLaunch();
-        addOfflineHelpButton();
-    });
-} else {
-    checkFirstLaunch();
-    addOfflineHelpButton();
-}
-
-// Exporter la fonction
+// Exporter la fonction pour l'utiliser via le bouton
 window.showOfflineGuide = showOfflineGuide;
