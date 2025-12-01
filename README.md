@@ -15,6 +15,7 @@ Application web production-ready pour la gestion des livraisons de cacao avec au
 - **Auth**: JWT (access + refresh tokens)
 - **Exports**: Excel (pandas/openpyxl) + PDF (ReportLab)
 - **Notifications**: Server-Sent Events (SSE) temps réel
+- **Traçabilité**: QR Codes + Blockchain SHA-256
 - **PWA**: Service Worker + Cache offline + Installation
 
 ## Installation
@@ -123,6 +124,40 @@ Base path: `/api/v1`
 ### Exports
 - GET `/exports/excel` - Export Excel (données + synthèses)
 - GET `/exports/pdf` - Export PDF (synthèses)
+
+### Traçabilité
+- GET `/traceability/delivery/{id}` - Traçabilité d'une livraison
+- GET `/traceability/verify/{qr_code}` - Vérifier un QR code (public)
+- POST `/traceability/scan/{qr_code}` - Enregistrer un scan
+- GET `/traceability/timeline/{id}` - Timeline complète
+- GET `/traceability/blockchain/verify` - Vérifier l'intégrité blockchain
+- GET `/traceability/stats` - Statistiques de traçabilité
+
+## 🔗 Système de Traçabilité
+
+Le système inclut une traçabilité complète avec blockchain et QR codes:
+
+- ✅ **QR Code unique** généré automatiquement pour chaque livraison
+- ✅ **Blockchain SHA-256** pour garantir l'intégrité des données
+- ✅ **Scanner mobile** (caméra ou saisie manuelle)
+- ✅ **Historique des scans** avec géolocalisation
+- ✅ **Timeline de traçabilité** complète
+- ✅ **Vérification d'authenticité** en temps réel
+
+### Déploiement de la Traçabilité
+
+```bash
+# 1. Appliquer la migration
+python apply_migration_016.py
+
+# 2. Générer la traçabilité pour les livraisons existantes
+python generate_traceability_existing.py
+
+# 3. Tester le système
+python test_traceability.py
+```
+
+Voir `TRACEABILITY_README.md` et `DEPLOIEMENT_TRACEABILITY.md` pour plus de détails.
 
 ## Rôles et Permissions
 

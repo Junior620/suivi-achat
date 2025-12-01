@@ -69,6 +69,14 @@ def create_delivery(db: Session, delivery_data: DeliveryCreate, current_user_id:
     db.commit()
     db.refresh(delivery)
     
+    # Générer automatiquement la traçabilité blockchain
+    try:
+        from .traceability_service import TraceabilityService
+        TraceabilityService.create_traceability_record(db, delivery)
+    except Exception as e:
+        # Ne pas bloquer la création de livraison si la traçabilité échoue
+        print(f"Erreur génération traçabilité: {e}")
+    
     # Créer une notification d'action
     if current_user_id:
         from . import notification_service

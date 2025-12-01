@@ -114,6 +114,9 @@ function loadPage(page) {
         case 'cooperatives':
             loadCooperativesPage(content);
             break;
+        case 'traceability':
+            loadTraceabilityPage(content);
+            break;
         case 'notifications':
             loadNotificationsPage(content);
             break;

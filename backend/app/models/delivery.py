@@ -18,9 +18,12 @@ class Delivery(Base):
     load_location = Column(String, nullable=False, index=True)
     unload_location = Column(String, nullable=False, index=True)
     cocoa_quality = Column(String, nullable=False, index=True)
+    quality = Column(String, nullable=True, index=True)  # Alias pour compatibilité traçabilité
+    vehicle = Column(String, nullable=True)  # Véhicule utilisé
     notes = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
     planter = relationship("Planter", back_populates="deliveries")
     payments = relationship("Payment", back_populates="delivery", cascade="all, delete-orphan")
+    traceability = relationship("TraceabilityRecord", back_populates="delivery", uselist=False, cascade="all, delete-orphan")
