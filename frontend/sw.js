@@ -9,7 +9,7 @@ const STATIC_ASSETS = [
     '/index.html',
     '/css/styles.css',
     '/css/auth.css',
-    '/js/api.js',
+    '/js/api.js?v=3',
     '/js/app.js',
     '/js/auth.js',
     '/js/planters.js',
