@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, DateTime
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 from ..database import Base
@@ -13,3 +14,6 @@ class User(Base):
     role = Column(String, nullable=False)  # admin, manager, viewer
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relations
+    sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan")
