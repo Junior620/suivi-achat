@@ -421,6 +421,12 @@ body {
     font-weight: 500;
 }
 
+.toast.info {
+    background: var(--info);
+    color: white;
+    font-weight: 500;
+}
+
 @keyframes slideIn {
     from {
         transform: translateX(100%);
