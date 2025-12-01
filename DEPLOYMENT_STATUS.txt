@@ -1,0 +1,151 @@
+✅ DÉPLOIEMENT - STATUT ACTUEL
+================================
+
+📦 GitHub
+---------
+✅ Code poussé sur https://github.com/Junior620/suivi-achat
+✅ 28 fichiers ajoutés (système de traçabilité complet)
+✅ GitHub Actions workflow créé (.github/workflows/azure-deploy.yml)
+
+🔗 Système de Traçabilité
+--------------------------
+✅ Backend complet (modèles, services, routes, API)
+✅ Frontend complet (interface, scanner QR, timeline)
+✅ Scripts de migration (apply_migration_016.py)
+✅ Scripts de génération (generate_traceability_existing.py)
+✅ Scripts de test (test_traceability.py)
+✅ Documentation complète (8 guides)
+
+☁️ Azure - EN COURS
+--------------------
+⚠️  Déploiement backend: Build failed
+⚠️  Base de données: Connexion bloquée
+
+🔧 PROBLÈMES À RÉSOUDRE
+========================
+
+1. Base de Données PostgreSQL
+------------------------------
+Problème: Le serveur ferme les connexions
+Solution possible:
+  - Le serveur est en tier Burstable (Standard_B2s)
+  - Peut avoir des limitations de connexions
+  - Vérifier les paramètres du serveur
+
+Commandes à essayer:
+```bash
+# Redémarrer le serveur PostgreSQL
+az postgres flexible-server restart \
+  --resource-group cocoatrack-rg \
+  --name cocoatrack-db-20251129201729
+
+# Vérifier les paramètres
+az postgres flexible-server parameter list \
+  --resource-group cocoatrack-rg \
+  --name cocoatrack-db-20251129201729 \
+  --query "[?name=='max_connections']"
+```
+
+2. Déploiement Backend
+-----------------------
+Problème: Build failed après 361 secondes
+Solution possible:
+  - Utiliser GitHub Actions (déjà configuré)
+  - Ou déployer via Azure Portal
+  - Ou utiliser Docker
+
+Options:
+
+A) Via GitHub Actions (RECOMMANDÉ)
+   1. Aller sur https://github.com/Junior620/suivi-achat/settings/secrets/actions
+   2. Ajouter le secret AZURE_WEBAPP_PUBLISH_PROFILE
+   3. Récupérer le profil: Portal Azure > App Service > Get publish profile
+   4. Push sur main déclenchera le déploiement automatique
+
+B) Via Azure Portal
+   1. Aller sur https://portal.azure.com
+   2. App Services > cocoatrack-api-20251129203507
+   3. Deployment Center > GitHub
+   4. Connecter le repo et configurer
+
+C) Via Docker (si les autres échouent)
+   1. Créer un Dockerfile
+   2. Build et push sur Azure Container Registry
+   3. Déployer depuis le registry
+
+📝 PROCHAINES ÉTAPES
+====================
+
+OPTION 1: Résoudre la base de données d'abord
+----------------------------------------------
+1. Redémarrer le serveur PostgreSQL
+   az postgres flexible-server restart \
+     --resource-group cocoatrack-rg \
+     --name cocoatrack-db-20251129201729
+
+2. Attendre 2-3 minutes
+
+3. Réessayer la migration
+   python apply_migration_016_azure.py
+
+4. Si ça marche, déployer le backend via Portal
+
+OPTION 2: Utiliser GitHub Actions
+----------------------------------
+1. Récupérer le publish profile:
+   - Portal Azure > cocoatrack-api-20251129203507
+   - Get publish profile (télécharger le XML)
+
+2. Ajouter comme secret GitHub:
+   - https://github.com/Junior620/suivi-achat/settings/secrets/actions
+   - New repository secret
+   - Name: AZURE_WEBAPP_PUBLISH_PROFILE
+   - Value: (coller le contenu du XML)
+
+3. Push un commit pour déclencher le workflow:
+   git commit --allow-empty -m "trigger deployment"
+   git push origin main
+
+4. Suivre le déploiement:
+   https://github.com/Junior620/suivi-achat/actions
+
+OPTION 3: Déploiement manuel via Portal
+----------------------------------------
+1. Aller sur https://portal.azure.com
+2. App Services > cocoatrack-api-20251129203507
+3. Deployment Center
+4. Source: GitHub
+5. Sélectionner: Junior620/suivi-achat, branch main
+6. Build provider: GitHub Actions
+7. Save
+
+🎯 OBJECTIF FINAL
+=================
+
+Une fois le backend déployé:
+
+1. Appliquer la migration via SSH:
+   az webapp ssh --name cocoatrack-api-20251129203507 --resource-group cocoatrack-rg
+   cd /home/site/wwwroot
+   python apply_migration_016.py
+   python generate_traceability_existing.py
+
+2. Tester l'API:
+   curl https://cocoatrack-api-20251129203507.azurewebsites.net/health
+   curl https://cocoatrack-api-20251129203507.azurewebsites.net/api/v1/traceability/stats
+
+3. Vérifier le frontend:
+   https://suivi-achat.vercel.app
+   Aller dans "🔗 Traçabilité"
+
+📞 SUPPORT
+==========
+
+Si les problèmes persistent:
+1. Vérifier les logs Azure: az webapp log tail
+2. Vérifier l'état du serveur PostgreSQL
+3. Considérer une nouvelle base de données
+4. Ou utiliser une base locale pour tester
+
+---
+Dernière mise à jour: 2025-12-01 23:40
