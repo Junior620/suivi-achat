@@ -9,15 +9,6 @@ async function loadDashboardPage(container) {
             <!-- KPIs Section -->
             <div class="kpi-grid">
                 <div class="kpi-card">
-                    <div class="kpi-icon">💰</div>
-                    <div class="kpi-content">
-                        <div class="kpi-label">Chiffre d'Affaires</div>
-                        <div class="kpi-value" id="kpiCA">0 FCFA</div>
-                        <div class="kpi-trend" id="kpiCATrend"></div>
-                    </div>
-                </div>
-                
-                <div class="kpi-card">
                     <div class="kpi-icon">📦</div>
                     <div class="kpi-content">
                         <div class="kpi-label">Volume Total</div>
@@ -27,11 +18,20 @@ async function loadDashboardPage(container) {
                 </div>
                 
                 <div class="kpi-card">
-                    <div class="kpi-icon">📉</div>
+                    <div class="kpi-icon">🚚</div>
                     <div class="kpi-content">
-                        <div class="kpi-label">Pertes</div>
-                        <div class="kpi-value" id="kpiPertes">0 kg</div>
-                        <div class="kpi-trend" id="kpiPertesTrend"></div>
+                        <div class="kpi-label">Nombre de Livraisons</div>
+                        <div class="kpi-value" id="kpiLivraisons">0</div>
+                        <div class="kpi-trend" id="kpiLivraisonsTrend"></div>
+                    </div>
+                </div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-icon">📊</div>
+                    <div class="kpi-content">
+                        <div class="kpi-label">Moyenne par Livraison</div>
+                        <div class="kpi-value" id="kpiMoyenne">0 kg</div>
+                        <div class="kpi-trend" id="kpiMoyenneTrend"></div>
                     </div>
                 </div>
                 
@@ -130,9 +130,14 @@ async function loadDashboardData(days = 30) {
         const recentDeliveries = allDeliveries.filter(d => new Date(d.date) >= cutoffDate);
 
         // Calculer les KPIs
+        const totalVolume = recentDeliveries.reduce((sum, d) => sum + d.quantity_kg, 0);
+        const totalLivraisons = recentDeliveries.length;
+        const moyenneParLivraison = totalLivraisons > 0 ? totalVolume / totalLivraisons : 0;
+
         dashboardData = {
-            totalVolume: recentDeliveries.reduce((sum, d) => sum + d.quantity_kg, 0),
-            totalCA: recentDeliveries.reduce((sum, d) => sum + (d.quantity_kg * 2500), 0), // Prix moyen 2500 FCFA/kg
+            totalVolume: totalVolume,
+            totalLivraisons: totalLivraisons,
+            moyenneParLivraison: moyenneParLivraison,
             totalPertes: recentDeliveries.reduce((sum, d) => sum + (d.perte_kg || 0), 0),
             activePlanters: new Set(recentDeliveries.map(d => d.planter_id)).size,
             deliveries: recentDeliveries,
@@ -153,13 +158,13 @@ function updateKPIs() {
     document.getElementById('kpiVolume').textContent = 
         `${dashboardData.totalVolume.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} kg`;
     
-    // CA
-    document.getElementById('kpiCA').textContent = 
-        `${dashboardData.totalCA.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} FCFA`;
+    // Livraisons
+    document.getElementById('kpiLivraisons').textContent = 
+        dashboardData.totalLivraisons.toLocaleString('fr-FR');
     
-    // Pertes
-    document.getElementById('kpiPertes').textContent = 
-        `${dashboardData.totalPertes.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} kg`;
+    // Moyenne
+    document.getElementById('kpiMoyenne').textContent = 
+        `${dashboardData.moyenneParLivraison.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} kg`;
     
     // Planteurs
     document.getElementById('kpiPlanteurs').textContent = dashboardData.activePlanters;
@@ -176,19 +181,27 @@ function calculateTrends() {
     const recent = dashboardData.deliveries.filter(d => new Date(d.date) >= midPoint);
     const previous = dashboardData.deliveries.filter(d => new Date(d.date) < midPoint);
     
+    // Tendance volume
     const recentVolume = recent.reduce((sum, d) => sum + d.quantity_kg, 0);
     const previousVolume = previous.reduce((sum, d) => sum + d.quantity_kg, 0);
-    
     const volumeTrend = previousVolume > 0 ? ((recentVolume - previousVolume) / previousVolume * 100) : 0;
-    
     updateTrendIndicator('kpiVolumeTrend', volumeTrend);
-    updateTrendIndicator('kpiCATrend', volumeTrend); // Même tendance pour le CA
     
-    const recentPertes = recent.reduce((sum, d) => sum + (d.perte_kg || 0), 0);
-    const previousPertes = previous.reduce((sum, d) => sum + (d.perte_kg || 0), 0);
-    const pertesTrend = previousPertes > 0 ? ((recentPertes - previousPertes) / previousPertes * 100) : 0;
+    // Tendance livraisons
+    const livraisonsTrend = previous.length > 0 ? ((recent.length - previous.length) / previous.length * 100) : 0;
+    updateTrendIndicator('kpiLivraisonsTrend', livraisonsTrend);
     
-    updateTrendIndicator('kpiPertesTrend', pertesTrend, true); // Inversé pour les pertes
+    // Tendance moyenne
+    const recentMoyenne = recent.length > 0 ? recentVolume / recent.length : 0;
+    const previousMoyenne = previous.length > 0 ? previousVolume / previous.length : 0;
+    const moyenneTrend = previousMoyenne > 0 ? ((recentMoyenne - previousMoyenne) / previousMoyenne * 100) : 0;
+    updateTrendIndicator('kpiMoyenneTrend', moyenneTrend);
+    
+    // Tendance planteurs
+    const recentPlanters = new Set(recent.map(d => d.planter_id)).size;
+    const previousPlanters = new Set(previous.map(d => d.planter_id)).size;
+    const plantersTrend = previousPlanters > 0 ? ((recentPlanters - previousPlanters) / previousPlanters * 100) : 0;
+    updateTrendIndicator('kpiPlanteursTrend', plantersTrend);
 }
 
 function updateTrendIndicator(elementId, trend, inverse = false) {
@@ -451,12 +464,16 @@ function updateTopPlantersTable() {
             planterStats[d.planter_id] = {
                 volume: 0,
                 deliveries: 0,
-                ca: 0
+                moyenne: 0
             };
         }
         planterStats[d.planter_id].volume += d.quantity_kg;
         planterStats[d.planter_id].deliveries += 1;
-        planterStats[d.planter_id].ca += d.quantity_kg * 2500;
+    });
+    
+    // Calculer la moyenne
+    Object.values(planterStats).forEach(stats => {
+        stats.moyenne = stats.deliveries > 0 ? stats.volume / stats.deliveries : 0;
     });
 
     // Trier par volume
@@ -476,7 +493,7 @@ function updateTopPlantersTable() {
                     <th>Planteur</th>
                     <th>Volume (kg)</th>
                     <th>Livraisons</th>
-                    <th>CA (FCFA)</th>
+                    <th>Moyenne (kg)</th>
                 </tr>
             </thead>
             <tbody>
@@ -490,7 +507,7 @@ function updateTopPlantersTable() {
                 <td>${planterMap[id] || `Planteur ${id}`}</td>
                 <td>${stats.volume.toLocaleString('fr-FR', { maximumFractionDigits: 0 })}</td>
                 <td>${stats.deliveries}</td>
-                <td>${stats.ca.toLocaleString('fr-FR', { maximumFractionDigits: 0 })}</td>
+                <td>${stats.moyenne.toLocaleString('fr-FR', { maximumFractionDigits: 1 })}</td>
             </tr>
         `;
     });
