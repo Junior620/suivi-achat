@@ -1,7 +1,7 @@
 /* Auth Page Styles */
 .auth-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+    background: linear-gradient(135deg, #2D5016 0%, #E67E22 50%, #F39C12 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -22,7 +22,7 @@
 
 /* Left Side - Branding */
 .auth-left {
-    background: linear-gradient(135deg, #6B3410 0%, #8B4513 100%);
+    background: linear-gradient(135deg, #1F3810 0%, #2D5016 50%, #4A7C2A 100%);
     color: white;
     padding: 60px 40px;
     display: flex;
@@ -170,7 +170,7 @@
     outline: none;
     border-color: var(--primary);
     background: white;
-    box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+    box-shadow: 0 0 0 3px rgba(45, 80, 22, 0.15);
 }
 
 .password-input {

@@ -5,16 +5,29 @@
 }
 
 :root {
-    --primary: #8B4513;
-    --primary-dark: #6B3410;
-    --primary-light: #A0522D;
-    --secondary: #D2691E;
-    --success: #28a745;
-    --danger: #dc3545;
-    --warning: #ffc107;
+    /* Couleurs SCPB - Vert forêt */
+    --primary: #2D5016;
+    --primary-dark: #1F3810;
+    --primary-light: #4A7C2A;
+    
+    /* Couleurs Afrexia - Orange/Doré */
+    --secondary: #E67E22;
+    --secondary-dark: #D35400;
+    --secondary-light: #F39C12;
+    
+    /* Couleurs complémentaires */
+    --accent: #8B6914;
+    --success: #27AE60;
+    --danger: #C0392B;
+    --warning: #F39C12;
+    --info: #3498DB;
+    
+    /* Couleurs neutres */
     --light: #f8f9fa;
     --dark: #2c3e50;
     --border: #dee2e6;
+    
+    /* Effets */
     --shadow: 0 2px 8px rgba(0,0,0,0.1);
     --shadow-lg: 0 4px 16px rgba(0,0,0,0.15);
     --transition: all 0.3s ease;
@@ -32,7 +45,7 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--secondary-light) 100%);
 }
 
 .login-container {
@@ -121,9 +134,9 @@ body {
 }
 
 .nav-item.active {
-    background: rgba(139, 69, 19, 0.2);
+    background: rgba(230, 126, 34, 0.2);
     color: white;
-    border-left-color: var(--primary);
+    border-left-color: var(--secondary);
     padding-left: 24px;
 }
 
@@ -139,7 +152,7 @@ body {
     padding: 12px;
     background: rgba(255,255,255,0.1);
     border-radius: 8px;
-    border-left: 3px solid var(--primary);
+    border-left: 3px solid var(--secondary);
 }
 
 #userInfo strong {
@@ -208,7 +221,7 @@ body {
     outline: none;
     border-color: var(--primary);
     background: white;
-    box-shadow: 0 0 0 4px rgba(139, 69, 19, 0.1);
+    box-shadow: 0 0 0 4px rgba(45, 80, 22, 0.15);
     transform: translateY(-1px);
 }
 
@@ -227,7 +240,7 @@ body {
 .form-group select {
     cursor: pointer;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238B4513' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232D5016' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 16px center;
     padding-right: 40px;
@@ -341,7 +354,10 @@ body {
 .kpi-value {
     font-size: 2rem;
     font-weight: bold;
-    color: var(--primary);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .kpi-label {
@@ -626,8 +642,8 @@ body {
 }
 
 .tabulator-row:hover {
-    background-color: rgba(139, 69, 19, 0.05) !important;
-    box-shadow: inset 3px 0 0 var(--primary);
+    background-color: rgba(45, 80, 22, 0.05) !important;
+    box-shadow: inset 3px 0 0 var(--secondary);
 }
 
 /* Fix Tabulator background colors - Override default styles */
@@ -863,7 +879,7 @@ select[multiple] option {
 }
 
 select[multiple] option:checked {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     color: white;
 }
 
@@ -1233,7 +1249,7 @@ input[type="checkbox"] {
 
 .tabulator .btn-icon:hover {
     transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(139, 69, 19, 0.3);
+    box-shadow: 0 4px 8px rgba(230, 126, 34, 0.3);
 }
 
 /* Animation pour les lignes du tableau */
@@ -1242,13 +1258,13 @@ input[type="checkbox"] {
 }
 
 .tabulator .tabulator-row:hover {
-    background: #fff8f0 !important;
-    box-shadow: 0 2px 8px rgba(139, 69, 19, 0.1);
+    background: #f0f8f0 !important;
+    box-shadow: 0 2px 8px rgba(45, 80, 22, 0.1);
 }
 
 /* Amélioration du header du tableau */
 .tabulator .tabulator-header {
-    background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
     color: white;
     font-weight: 600;
 }
