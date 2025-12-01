@@ -74,21 +74,10 @@ function checkFirstLaunch() {
     }
 }
 
-// Ajouter un bouton d'aide dans le header
+// Ajouter un bouton d'aide dans le header - DÉSACTIVÉ pour éviter le débordement
 function addOfflineHelpButton() {
-    const header = document.querySelector('.sidebar-header');
-    if (header) {
-        const helpBtn = document.createElement('button');
-        helpBtn.className = 'notification-btn';
-        helpBtn.innerHTML = '❓';
-        helpBtn.title = 'Aide mode offline';
-        helpBtn.onclick = showOfflineGuide;
-        
-        const buttonsContainer = header.querySelector('div[style*="display: flex"]');
-        if (buttonsContainer) {
-            buttonsContainer.appendChild(helpBtn);
-        }
-    }
+    // Bouton désactivé - le guide s'affiche au premier lancement uniquement
+    // Pour réafficher le guide, l'utilisateur peut supprimer 'offline_guide_seen' du localStorage
 }
 
 // Initialiser au chargement
