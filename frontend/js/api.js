@@ -387,6 +387,47 @@ class API {
     async getCooperativeDetails(nom) {
         return this.request(`/cooperatives/${encodeURIComponent(nom)}`);
     }
+
+    // Payments
+    async getPayments(params = {}) {
+        const cleanParams = Object.fromEntries(
+            Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+        );
+        const queryString = new URLSearchParams(cleanParams).toString();
+        return this.request(`/payments?${queryString}`);
+    }
+
+    async getPayment(id) {
+        return this.request(`/payments/${id}`);
+    }
+
+    async createPayment(data) {
+        return this.request('/payments', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async updatePayment(id, data) {
+        return this.request(`/payments/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async deletePayment(id) {
+        return this.request(`/payments/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    async getBalances() {
+        return this.request('/payments/balances/all');
+    }
+
+    async getPlanterBalance(planterId) {
+        return this.request(`/payments/balances/${planterId}`);
+    }
 }
 
 const api = new API();

@@ -87,6 +87,9 @@ function loadPage(page) {
         case 'deliveries':
             loadDeliveriesPage(content);
             break;
+        case 'payments':
+            loadPaymentsPage(content);
+            break;
         case 'planters':
             loadPlantersPage(content);
             break;
