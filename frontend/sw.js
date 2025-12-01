@@ -1,5 +1,5 @@
 // Service Worker pour CocoaTrack PWA
-const CACHE_NAME = 'cocoatrack-v2';
+const CACHE_NAME = 'cocoatrack-v3-https';
 const OFFLINE_QUEUE = 'offline-queue';
 
 // Fichiers à mettre en cache
