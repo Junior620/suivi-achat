@@ -2,12 +2,16 @@
 // En production (Vercel), utilise l'URL Azure
 // En développement local, utilise localhost:8000
 const getApiBaseUrl = () => {
-    // Si on est sur Vercel (domaine .vercel.app)
+    // Si on est sur Vercel (domaine .vercel.app) - utiliser HTTPS
     if (window.location.hostname.includes('vercel.app')) {
         return 'https://cocoatrack-api-20251129203507.azurewebsites.net/api/v1';
     }
-    // Si on est en local
-    return `http://${window.location.hostname}:8000/api/v1`;
+    // Si on est en local - utiliser HTTP
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return `http://${window.location.hostname}:8000/api/v1`;
+    }
+    // Par défaut, utiliser HTTPS
+    return 'https://cocoatrack-api-20251129203507.azurewebsites.net/api/v1';
 };
 
 const API_BASE = getApiBaseUrl();

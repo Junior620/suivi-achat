@@ -496,6 +496,12 @@ async function loadDeliveriesPage(container) {
             const filterLoadSelect = document.getElementById('filterLoad');
             const filterUnloadSelect = document.getElementById('filterUnload');
             
+            // Vérifier que les éléments existent
+            if (!filterLoadSelect || !filterUnloadSelect) {
+                console.warn('Filter select elements not found');
+                return;
+            }
+            
             locations.load_locations.forEach(loc => {
                 const option = document.createElement('option');
                 option.value = loc;

@@ -154,20 +154,31 @@ async function loadDashboardData(days = 30) {
 }
 
 function updateKPIs() {
+    // Vérifier que les éléments existent
+    const kpiVolume = document.getElementById('kpiVolume');
+    const kpiLivraisons = document.getElementById('kpiLivraisons');
+    const kpiMoyenne = document.getElementById('kpiMoyenne');
+    const kpiPlanteurs = document.getElementById('kpiPlanteurs');
+    
+    if (!kpiVolume || !kpiLivraisons || !kpiMoyenne || !kpiPlanteurs) {
+        console.warn('KPI elements not found, skipping update');
+        return;
+    }
+    
     // Volume
-    document.getElementById('kpiVolume').textContent = 
+    kpiVolume.textContent = 
         `${dashboardData.totalVolume.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} kg`;
     
     // Livraisons
-    document.getElementById('kpiLivraisons').textContent = 
+    kpiLivraisons.textContent = 
         dashboardData.totalLivraisons.toLocaleString('fr-FR');
     
     // Moyenne
-    document.getElementById('kpiMoyenne').textContent = 
+    kpiMoyenne.textContent = 
         `${dashboardData.moyenneParLivraison.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} kg`;
     
     // Planteurs
-    document.getElementById('kpiPlanteurs').textContent = dashboardData.activePlanters;
+    kpiPlanteurs.textContent = dashboardData.activePlanters;
 
     // Calculer les tendances (comparaison avec période précédente)
     calculateTrends();
@@ -214,8 +225,15 @@ function updateTrendIndicator(elementId, trend, inverse = false) {
 }
 
 function initDashboardCharts() {
+    // Vérifier que les éléments canvas existent
+    const evolutionCanvas = document.getElementById('evolutionChart');
+    if (!evolutionCanvas) {
+        console.warn('Chart canvas elements not found, skipping initialization');
+        return;
+    }
+    
     // Graphique d'évolution
-    const evolutionCtx = document.getElementById('evolutionChart').getContext('2d');
+    const evolutionCtx = evolutionCanvas.getContext('2d');
     dashboardCharts.evolution = new Chart(evolutionCtx, {
         type: 'line',
         data: {
