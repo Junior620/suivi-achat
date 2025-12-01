@@ -40,7 +40,7 @@ async function init() {
         }
 
         setupNavigation();
-        loadPage('deliveries');
+        loadPage('dashboard');
     } catch (error) {
         console.error('Init error:', error);
         localStorage.clear();
@@ -78,6 +78,9 @@ function loadPage(page) {
     }
     
     switch(page) {
+        case 'dashboard':
+            loadDashboardPage(content);
+            break;
         case 'search':
             loadSearchPage(content);
             break;
