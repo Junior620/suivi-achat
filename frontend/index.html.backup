@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Gestion Cacao</title>
+    <link rel="icon" type="image/png" href="assets/feve-de-cacao.png">
+    <link rel="apple-touch-icon" href="assets/feve-de-cacao.png">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/auth.css">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-left">
+            <div class="auth-branding">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 30px; margin-bottom: 20px;">
+                    <img src="assets/logo-scpb.png" alt="SCPB" style="height: 100px; width: auto; object-fit: contain;">
+                    <img src="assets/logo-afrexia.png" alt="Afrexia" style="height: 100px; width: 100px; object-fit: contain;">
+                </div>
+                <h1>CocoaTrack</h1>
+                <p class="tagline">Gestion intelligente des livraisons de cacao</p>
+            </div>
+            <div class="auth-features">
+                <div class="feature-item">
+                    <span class="feature-icon">📊</span>
+                    <div>
+                        <h3>Analytics en temps réel</h3>
+                        <p>Suivez vos livraisons et performances</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📦</span>
+                    <div>
+                        <h3>Gestion complète</h3>
+                        <p>Planteurs, livraisons et qualité</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📄</span>
+                    <div>
+                        <h3>Exports professionnels</h3>
+                        <p>Excel et PDF en un clic</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="auth-right">
+            <div class="auth-card">
+                <!-- Login Form -->
+                <div id="loginSection" class="auth-section active">
+                    <h2>Connexion</h2>
+                    <p class="auth-subtitle">Accédez à votre espace de gestion</p>
+                    
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="loginEmail">
+                                <span class="label-icon">📧</span>
+                                Email
+                            </label>
+                            <input type="email" id="loginEmail" required placeholder="votre@email.com" autocomplete="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">
+                                <span class="label-icon">🔒</span>
+                                Mot de passe
+                            </label>
+                            <div class="password-input">
+                                <input type="password" id="loginPassword" required placeholder="••••••••" autocomplete="current-password">
+                                <button type="button" class="toggle-password" data-target="loginPassword">
+                                    <span class="eye-icon">👁️</span>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <span>Se connecter</span>
+                            <span class="btn-arrow">→</span>
+                        </button>
+                        <div id="loginError" class="error-message"></div>
+                    </form>
+                    
+                    <div class="auth-divider">
+                        <span>ou</span>
+                    </div>
+                    
+                    <p class="auth-switch">
+                        Pas encore de compte ? 
+                        <a href="#" id="showRegister" class="auth-link">Créer un compte</a>
+                    </p>
+                    
+                    <div class="demo-section">
+                        <details>
+                            <summary>Comptes de démonstration</summary>
+                            <div class="demo-accounts">
+                                <div class="demo-account" data-email="admin@cocoa.com" data-password="admin123">
+                                    <span class="demo-badge admin">Admin</span>
+                                    <span class="demo-email">admin@cocoa.com</span>
+                                </div>
+                                <div class="demo-account" data-email="manager@cocoa.com" data-password="manager123">
+                                    <span class="demo-badge manager">Manager</span>
+                                    <span class="demo-email">manager@cocoa.com</span>
+                                </div>
+                                <div class="demo-account" data-email="viewer@cocoa.com" data-password="viewer123">
+                                    <span class="demo-badge viewer">Viewer</span>
+                                    <span class="demo-email">viewer@cocoa.com</span>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+                
+                <!-- Register Form -->
+                <div id="registerSection" class="auth-section">
+                    <h2>Créer un compte</h2>
+                    <p class="auth-subtitle">Rejoignez CocoaTrack aujourd'hui</p>
+                    
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <label for="registerEmail">
+                                <span class="label-icon">📧</span>
+                                Email
+                            </label>
+                            <input type="email" id="registerEmail" required placeholder="votre@email.com" autocomplete="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="registerPassword">
+                                <span class="label-icon">🔒</span>
+                                Mot de passe
+                            </label>
+                            <div class="password-input">
+                                <input type="password" id="registerPassword" required placeholder="••••••••" minlength="6" autocomplete="new-password">
+                                <button type="button" class="toggle-password" data-target="registerPassword">
+                                    <span class="eye-icon">👁️</span>
+                                </button>
+                            </div>
+                            <small class="input-hint">Minimum 6 caractères</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerPasswordConfirm">
+                                <span class="label-icon">🔒</span>
+                                Confirmer le mot de passe
+                            </label>
+                            <div class="password-input">
+                                <input type="password" id="registerPasswordConfirm" required placeholder="••••••••" minlength="6" autocomplete="new-password">
+                                <button type="button" class="toggle-password" data-target="registerPasswordConfirm">
+                                    <span class="eye-icon">👁️</span>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <span>Créer mon compte</span>
+                            <span class="btn-arrow">→</span>
+                        </button>
+                        <div id="registerError" class="error-message"></div>
+                        <div id="registerSuccess" class="success-message"></div>
+                    </form>
+                    
+                    <div class="auth-divider">
+                        <span>ou</span>
+                    </div>
+                    
+                    <p class="auth-switch">
+                        Déjà un compte ? 
+                        <a href="#" id="showLogin" class="auth-link">Se connecter</a>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="auth-footer">
+                <p>&copy; 2024 CocoaTrack. Tous droits réservés.</p>
+            </div>
+        </div>
+    </div>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>
