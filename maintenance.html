@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance - CocoaTrack</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #666;
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .status {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .status h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .status p {
+            color: #555;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .loader {
+            margin: 30px auto;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .contact {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+        }
+
+        .contact a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .contact a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🔧</div>
+        <h1>Maintenance en cours</h1>
+        <p>
+            Notre plateforme CocoaTrack est actuellement en maintenance pour améliorer votre expérience.
+        </p>
+        
+        <div class="loader"></div>
+
+        <div class="status">
+            <h3>📊 Statut</h3>
+            <p>Nous effectuons une mise à jour importante de notre infrastructure pour vous offrir de meilleures performances et de nouvelles fonctionnalités.</p>
+        </div>
+
+        <div class="status" style="margin-top: 20px; border-left-color: #10b981;">
+            <h3 style="color: #10b981;">⏱️ Durée estimée</h3>
+            <p>La maintenance devrait être terminée sous peu. Merci de votre patience!</p>
+        </div>
+
+        <div class="contact">
+            <p style="font-size: 14px; color: #888;">
+                Pour toute urgence, contactez-nous à<br>
+                <a href="mailto:support@cocoatrack.com">support@cocoatrack.com</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh every 2 minutes
+        setTimeout(() => {
+            location.reload();
+        }, 120000);
+    </script>
+</body>
+</html>
