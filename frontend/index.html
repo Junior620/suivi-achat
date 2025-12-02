@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maintenance - CocoaTrack</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,128 +13,314 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 15s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
         }
 
         .container {
-            background: white;
-            border-radius: 20px;
-            padding: 60px 40px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 60px 50px;
             max-width: 600px;
+            width: 100%;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
+            z-index: 10;
+            animation: slideUp 0.6s ease-out;
         }
 
-        .icon {
-            font-size: 80px;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .logo svg {
+            width: 45px;
+            height: 45px;
+            color: white;
         }
 
         h1 {
-            color: #333;
+            color: #1a202c;
             font-size: 32px;
-            margin-bottom: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
         }
 
-        p {
-            color: #666;
+        .subtitle {
+            color: #4a5568;
             font-size: 18px;
             line-height: 1.6;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+            font-weight: 400;
         }
 
-        .status {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 30px;
+        .progress-container {
+            margin: 40px 0;
         }
 
-        .status h3 {
-            color: #667eea;
-            margin-bottom: 10px;
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
         }
 
-        .status p {
-            color: #555;
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            animation: progress 2s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        .info-cards {
+            display: grid;
+            gap: 16px;
+            margin: 40px 0;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .info-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .info-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .icon-blue {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .icon-green {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .info-card-title {
+            font-weight: 600;
+            color: #2d3748;
             font-size: 16px;
-            margin: 0;
         }
 
-        .loader {
-            margin: 30px auto;
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .info-card-text {
+            color: #4a5568;
+            font-size: 14px;
+            line-height: 1.6;
         }
 
         .contact {
             margin-top: 40px;
             padding-top: 30px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid #e2e8f0;
         }
 
-        .contact a {
+        .contact-text {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .contact-email {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             color: #667eea;
             text-decoration: none;
             font-weight: 600;
+            font-size: 15px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            transition: all 0.2s;
         }
 
-        .contact a:hover {
-            text-decoration: underline;
+        .contact-email:hover {
+            background: rgba(102, 126, 234, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .footer {
+            margin-top: 30px;
+            color: #a0aec0;
+            font-size: 13px;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 40px 30px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="icon">🔧</div>
-        <h1>Maintenance en cours</h1>
-        <p>
-            Notre plateforme CocoaTrack est actuellement en maintenance pour améliorer votre expérience.
-        </p>
-        
-        <div class="loader"></div>
+    <div class="particles" id="particles"></div>
 
-        <div class="status">
-            <h3>📊 Statut</h3>
-            <p>Nous effectuons une mise à jour importante de notre infrastructure pour vous offrir de meilleures performances et de nouvelles fonctionnalités.</p>
+    <div class="container">
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
         </div>
 
-        <div class="status" style="margin-top: 20px; border-left-color: #10b981;">
-            <h3 style="color: #10b981;">⏱️ Durée estimée</h3>
-            <p>La maintenance devrait être terminée sous peu. Merci de votre patience!</p>
+        <h1>Maintenance en cours</h1>
+        <p class="subtitle">
+            Notre plateforme CocoaTrack est actuellement en maintenance pour vous offrir une expérience encore meilleure.
+        </p>
+
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="info-cards">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon icon-blue">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <h3 class="info-card-title">Mise à jour majeure</h3>
+                </div>
+                <p class="info-card-text">
+                    Nous déployons de nouvelles fonctionnalités et améliorations pour optimiser la gestion de vos livraisons de cacao.
+                </p>
+            </div>
+
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon icon-green">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 24 24">
+                            <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                        </svg>
+                    </div>
+                    <h3 class="info-card-title">Retour imminent</h3>
+                </div>
+                <p class="info-card-text">
+                    La maintenance sera terminée sous peu. Merci de votre patience et de votre compréhension.
+                </p>
+            </div>
         </div>
 
         <div class="contact">
-            <p style="font-size: 14px; color: #888;">
-                Pour toute urgence, contactez-nous à<br>
-                <a href="mailto:support@cocoatrack.com">support@cocoatrack.com</a>
-            </p>
+            <p class="contact-text">Besoin d'assistance urgente ?</p>
+            <a href="mailto:support@cocoatrack.com" class="contact-email">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                </svg>
+                support@cocoatrack.com
+            </a>
+        </div>
+
+        <div class="footer">
+            © 2024 CocoaTrack. Tous droits réservés.
         </div>
     </div>
 
     <script>
+        // Create animated particles
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.width = Math.random() * 60 + 20 + 'px';
+            particle.style.height = particle.style.width;
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+
         // Auto-refresh every 2 minutes
         setTimeout(() => {
             location.reload();
