@@ -2,12 +2,26 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .routers import auth, users, planters, deliveries, analytics, exports, chef_planteurs, collectes, notifications, sse, cooperatives, payments, traceability
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Cocoa Delivery Management API",
     description="API pour la gestion des livraisons de cacao",
     version="1.0.0"
 )
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Application starting up...")
+    logger.info(f"Database pool size: 5, max overflow: 10")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("Application shutting down...")
 
 app.add_middleware(
     CORSMiddleware,

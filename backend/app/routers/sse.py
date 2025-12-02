@@ -13,25 +13,46 @@ router = APIRouter(prefix="/sse", tags=["sse"])
 
 # Dictionnaire pour stocker les connexions actives par user_id
 active_connections: dict[str, list[asyncio.Queue]] = {}
+MAX_CONNECTIONS_PER_USER = 3  # Limiter les connexions par utilisateur
 
 async def event_generator(user_id: str, db: Session) -> AsyncGenerator[str, None]:
     """Générateur d'événements SSE pour un utilisateur"""
-    queue: asyncio.Queue = asyncio.Queue()
+    queue: asyncio.Queue = asyncio.Queue(maxsize=10)  # Limiter la taille de la queue
     
     # Ajouter cette connexion à la liste des connexions actives
     if user_id not in active_connections:
         active_connections[user_id] = []
+    
+    # Limiter le nombre de connexions par utilisateur
+    if len(active_connections[user_id]) >= MAX_CONNECTIONS_PER_USER:
+        # Fermer la plus ancienne connexion
+        old_queue = active_connections[user_id].pop(0)
+        try:
+            await old_queue.put({'type': 'disconnect', 'reason': 'max_connections'})
+        except:
+            pass
+    
     active_connections[user_id].append(queue)
     
     try:
         # Envoyer un message de connexion initial
         yield f"data: {json.dumps({'type': 'connected', 'message': 'Connected to notification stream'})}\n\n"
         
-        # Boucle infinie pour envoyer les événements
+        # Boucle avec timeout pour éviter les connexions infinies
+        max_duration = 3600  # 1 heure maximum
+        start_time = asyncio.get_event_loop().time()
+        
         while True:
+            # Vérifier le timeout global
+            if asyncio.get_event_loop().time() - start_time > max_duration:
+                yield f"data: {json.dumps({'type': 'disconnect', 'reason': 'timeout'})}\n\n"
+                break
+            
             # Attendre un événement dans la queue
             try:
                 event = await asyncio.wait_for(queue.get(), timeout=30.0)
+                if event.get('type') == 'disconnect':
+                    break
                 yield f"data: {json.dumps(event)}\n\n"
             except asyncio.TimeoutError:
                 # Envoyer un ping toutes les 30 secondes pour maintenir la connexion

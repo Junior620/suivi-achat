@@ -3,15 +3,19 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from .config import settings
 
-# Configuration du pool de connexions pour production
+# Configuration du pool de connexions optimisée pour Azure Standard S1
 engine = create_engine(
     settings.DATABASE_URL,
-    pool_size=20,  # Nombre de connexions permanentes (augmenté)
-    max_overflow=40,  # Connexions supplémentaires autorisées (augmenté)
-    pool_timeout=30,  # Timeout en secondes (réduit)
-    pool_recycle=1800,  # Recycler les connexions après 30min
-    pool_pre_ping=True,  # Vérifier la connexion avant utilisation
-    echo_pool=False  # Désactiver les logs du pool
+    pool_size=10,  # Connexions permanentes
+    max_overflow=20,  # Connexions supplémentaires
+    pool_timeout=30,
+    pool_recycle=1800,  # Recycler après 30min
+    pool_pre_ping=True,
+    echo=False,
+    connect_args={
+        "connect_timeout": 10,
+        "options": "-c statement_timeout=30000"  # 30s timeout
+    }
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
