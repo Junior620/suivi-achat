@@ -13,10 +13,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="CocoaTrack">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.0/dist/css/tabulator.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css?v=2">
     <link rel="stylesheet" href="css/search.css">
     <link rel="stylesheet" href="css/dashboard.css">
-    <link rel="stylesheet" href="css/onboarding.css">
     <link rel="stylesheet" href="css/traceability.css">
 </head>
 <body>
@@ -24,7 +24,7 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div style="display: flex; align-items: center; gap: 6px;">
-                    <img src="assets/feve-de-cacao.png" alt="CocoaTrack" style="height: 30px;">
+                    <img src="assets/feve-de-cacao.png" alt="CocoaTrack" style="height: 30px;" loading="eager">
                     <h2 style="margin: 0; font-size: 1.1rem; flex: 1;">CocoaTrack</h2>
                 </div>
                 <div style="display: flex; gap: 6px; margin-top: 6px; justify-content: flex-start;">
@@ -49,10 +49,16 @@
                 <a href="#analytics-fournisseur" class="nav-item" data-page="analytics-fournisseur">🏢 Synthèse Fournisseur</a>
                 <a href="#analytics-zones" class="nav-item" data-page="analytics-zones">🗺️ Synthèse Zones</a>
                 <a href="#analytics-quality" class="nav-item" data-page="analytics-quality">⭐ Synthèse Qualité</a>
+                <a href="#warehouses" class="nav-item" data-page="warehouses">🏭 Gestion Stocks</a>
+                <a href="#documents" class="nav-item" data-page="documents">📄 Documents</a>
                 <a href="#collectes" class="nav-item" data-page="collectes">🚚 Collectes</a>
                 <a href="#cooperatives" class="nav-item" data-page="cooperatives">🏢 Coopératives</a>
                 <a href="#traceability" class="nav-item" data-page="traceability">🔗 Traçabilité</a>
                 <a href="#notifications" class="nav-item" data-page="notifications">📬 Notifications</a>
+                <a href="#messaging" class="nav-item" data-page="messaging">
+                    💬 Messagerie
+                    <span id="messagingBadge" class="notification-badge" style="display: none; margin-left: 8px;">0</span>
+                </a>
                 <a href="#admin" class="nav-item admin-only" data-page="admin">⚙️ Administration</a>
             </nav>
             <div class="sidebar-footer">
@@ -70,7 +76,12 @@
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+    <script src="js/lazy-load.js"></script>
+    <script src="js/config.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/share-to-messaging.js"></script>
+    <script src="js/messaging.js"></script>
+    <script src="js/messaging-page.js"></script>
     <script src="js/app.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/search.js"></script>
@@ -85,14 +96,13 @@
     <script src="js/cooperatives.js"></script>
     <script src="js/traceability.js"></script>
     <script src="js/offline.js"></script>
+    <script src="js/offline-enhanced.js"></script>
+    <script src="js/push-notifications.js"></script>
+    <script src="js/warehouses.js"></script>
+    <script src="js/documents.js"></script>
     <script src="js/offline-guide.js"></script>
-    <script src="js/onboarding.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-    <!-- Bouton d'aide flottant -->
-    <div class="help-fab" onclick="helpSystem.showHelpCenter()" title="Centre d'aide">
-        🎓
-    </div>
 
 </body>
 </html>

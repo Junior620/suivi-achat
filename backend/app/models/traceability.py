@@ -29,7 +29,7 @@ class TraceabilityRecord(Base):
     verified_at = Column(DateTime)
     
     # Relations
-    delivery = relationship("Delivery", back_populates="traceability")
+    delivery = relationship("Delivery")  # back_populates commented out in Delivery model
     scans = relationship("TraceabilityScan", back_populates="record", cascade="all, delete-orphan")
 
 class TraceabilityScan(Base):

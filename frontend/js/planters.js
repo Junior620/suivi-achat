@@ -747,7 +747,7 @@ async function loadPlantersPage(container) {
                         quantity_kg: parseFloat(quantityKg),
                         load_location: loadLocation || 'Non spécifié',
                         unload_location: unloadLocation || 'Non spécifié',
-                        cocoa_quality: cocoaQuality || 'Standard',
+                        quality: cocoaQuality || 'Standard',
                         notes: document.getElementById('deliveryNotes').value || `Chargement: ${loadDate}${loadLocation ? ' à ' + loadLocation : ''}`
                     };
                     

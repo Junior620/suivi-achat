@@ -2,6 +2,7 @@
 
 let dashboardCharts = {};
 let dashboardData = {};
+let dashboardRefreshInterval = null;
 
 async function loadDashboardPage(container) {
     container.innerHTML = `
@@ -99,20 +100,37 @@ async function loadDashboardPage(container) {
         </div>
     `;
 
+    // Attendre que le DOM soit mis à jour
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
     await loadDashboardData();
     initDashboardCharts();
     
+    // Nettoyer l'ancien intervalle s'il existe
+    if (dashboardRefreshInterval) {
+        clearInterval(dashboardRefreshInterval);
+    }
+    
     // Rafraîchir toutes les 30 secondes
-    setInterval(async () => {
+    dashboardRefreshInterval = setInterval(async () => {
+        // Vérifier que nous sommes toujours sur la page dashboard
+        if (!document.getElementById('evolutionChart')) {
+            clearInterval(dashboardRefreshInterval);
+            dashboardRefreshInterval = null;
+            return;
+        }
         await loadDashboardData();
         updateDashboardCharts();
     }, 30000);
 
     // Gérer le changement de période
-    document.getElementById('evolutionPeriod').addEventListener('change', async (e) => {
-        await loadDashboardData(parseInt(e.target.value));
-        updateEvolutionChart();
-    });
+    const periodSelector = document.getElementById('evolutionPeriod');
+    if (periodSelector) {
+        periodSelector.addEventListener('change', async (e) => {
+            await loadDashboardData(parseInt(e.target.value));
+            updateEvolutionChart();
+        });
+    }
 }
 
 async function loadDashboardData(days = 30) {
@@ -121,8 +139,11 @@ async function loadDashboardData(days = 30) {
         const deliveries = await api.getDeliveries({ size: 10000 });
         const planters = await api.getPlanters({ size: 1000 });
         
-        const allDeliveries = deliveries.items || deliveries;
-        const allPlanters = planters.items || planters;
+        // Vérifier que les données sont valides
+        const allDeliveries = Array.isArray(deliveries) ? deliveries : 
+                             (deliveries?.items && Array.isArray(deliveries.items)) ? deliveries.items : [];
+        const allPlanters = Array.isArray(planters) ? planters :
+                           (planters?.items && Array.isArray(planters.items)) ? planters.items : [];
 
         // Filtrer par période
         const cutoffDate = new Date();
@@ -161,7 +182,6 @@ function updateKPIs() {
     const kpiPlanteurs = document.getElementById('kpiPlanteurs');
     
     if (!kpiVolume || !kpiLivraisons || !kpiMoyenne || !kpiPlanteurs) {
-        console.warn('KPI elements not found, skipping update');
         return;
     }
     
@@ -364,6 +384,11 @@ function initDashboardCharts() {
 }
 
 function updateDashboardCharts() {
+    // Vérifier que les graphiques sont initialisés et que nous sommes sur la page dashboard
+    if (!dashboardCharts.evolution || !document.getElementById('evolutionChart')) {
+        return;
+    }
+    
     updateEvolutionChart();
     updateQualityChart();
     updateTopPlantersChart();
@@ -444,10 +469,16 @@ function updateForecastChart() {
     });
 
     const sortedDates = Object.keys(dailyData).sort();
-    const historicalValues = sortedDates.map(date => dailyData[date]);
+    
+    // Si pas de données, utiliser la date actuelle
+    if (sortedDates.length === 0) {
+        sortedDates.push(new Date().toISOString().split('T')[0]);
+    }
+    
+    const historicalValues = sortedDates.map(date => dailyData[date] || 0);
 
     // Calculer la moyenne pour les prévisions
-    const avgVolume = historicalValues.reduce((a, b) => a + b, 0) / historicalValues.length;
+    const avgVolume = historicalValues.reduce((a, b) => a + b, 0) / historicalValues.length || 0;
     const trend = historicalValues.length > 1 ? 
         (historicalValues[historicalValues.length - 1] - historicalValues[0]) / historicalValues.length : 0;
 
@@ -531,5 +562,9 @@ function updateTopPlantersTable() {
     });
 
     html += `</tbody></table>`;
-    document.getElementById('topPlantersTable').innerHTML = html;
+    
+    const tableElement = document.getElementById('topPlantersTable');
+    if (tableElement) {
+        tableElement.innerHTML = html;
+    }
 }

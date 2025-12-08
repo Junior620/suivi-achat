@@ -1,5 +1,5 @@
 // Service Worker pour CocoaTrack PWA
-const CACHE_NAME = 'cocoatrack-v3-https';
+const CACHE_NAME = 'cocoatrack-v5-complete';
 const OFFLINE_QUEUE = 'offline-queue';
 
 // Fichiers à mettre en cache
@@ -7,6 +7,9 @@ const STATIC_ASSETS = [
     '/',
     '/app.html',
     '/index.html',
+    '/audit.html',
+    '/sessions.html',
+    '/reports.html',
     '/css/styles.css',
     '/css/auth.css',
     '/js/api.js?v=3',
@@ -21,6 +24,9 @@ const STATIC_ASSETS = [
     '/js/admin.js',
     '/js/notifications.js',
     '/js/offline.js',
+    '/js/audit.js',
+    '/js/sessions.js',
+    '/js/reports.js',
     '/assets/feve-de-cacao.png',
     '/manifest.json'
 ];
@@ -59,6 +65,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
+
+    // Ignorer les SSE (Server-Sent Events)
+    if (url.pathname.includes('/sse/') || request.headers.get('accept') === 'text/event-stream') {
+        return; // Laisser passer sans interception
+    }
 
     // Ignorer les requêtes non-GET
     if (request.method !== 'GET') {
@@ -203,4 +214,83 @@ self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'SYNC_NOW') {
         syncOfflineData();
     }
+});
+
+
+// ==================== PUSH NOTIFICATIONS ====================
+
+// Gérer la réception d'une push notification
+self.addEventListener('push', (event) => {
+    console.log('[SW] Push notification reçue');
+    
+    let data = {
+        title: 'CocoaTrack',
+        body: 'Nouvelle notification',
+        icon: '/icon-192.png',
+        badge: '/badge-72.png'
+    };
+    
+    if (event.data) {
+        try {
+            data = event.data.json();
+        } catch (e) {
+            data.body = event.data.text();
+        }
+    }
+    
+    const options = {
+        body: data.body || data.message,
+        icon: data.icon || '/icon-192.png',
+        badge: data.badge || '/badge-72.png',
+        vibrate: [200, 100, 200],
+        data: {
+            url: data.url || '/',
+            ...data
+        },
+        actions: data.actions || [
+            { action: 'open', title: 'Ouvrir' },
+            { action: 'close', title: 'Fermer' }
+        ],
+        requireInteraction: data.requireInteraction || false,
+        tag: data.tag || 'notification'
+    };
+    
+    event.waitUntil(
+        self.registration.showNotification(data.title || 'CocoaTrack', options)
+    );
+});
+
+// Gérer le clic sur une notification
+self.addEventListener('notificationclick', (event) => {
+    console.log('[SW] Notification cliquée:', event.action);
+    
+    event.notification.close();
+    
+    if (event.action === 'close') {
+        return;
+    }
+    
+    // Ouvrir l'URL associée à la notification
+    const urlToOpen = event.notification.data?.url || '/';
+    
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then((clientList) => {
+                // Chercher une fenêtre déjà ouverte
+                for (const client of clientList) {
+                    if (client.url.includes(urlToOpen) && 'focus' in client) {
+                        return client.focus();
+                    }
+                }
+                // Ouvrir une nouvelle fenêtre
+                if (clients.openWindow) {
+                    return clients.openWindow(urlToOpen);
+                }
+            })
+    );
+});
+
+// Gérer la fermeture d'une notification
+self.addEventListener('notificationclose', (event) => {
+    console.log('[SW] Notification fermée');
 });

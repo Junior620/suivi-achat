@@ -419,7 +419,14 @@ async function loadDeliveriesPage(container) {
             closeModal();
             loadTable();
         } catch (error) {
-            showToast(error.message, 'error');
+            console.error('Erreur création livraison:', error);
+            let errorMessage = 'Erreur lors de la création de la livraison';
+            if (error && error.message) {
+                errorMessage = error.message;
+            } else if (typeof error === 'string') {
+                errorMessage = error;
+            }
+            showToast(errorMessage, 'error');
         }
     });
 

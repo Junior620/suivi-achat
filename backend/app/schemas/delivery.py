@@ -13,7 +13,7 @@ class DeliveryBase(BaseModel):
     quantity_kg: float = Field(..., gt=0, description="Quantité déchargée en kg")
     load_location: str
     unload_location: str
-    cocoa_quality: str
+    quality: str
     notes: Optional[str] = None
 
 class DeliveryCreate(DeliveryBase):

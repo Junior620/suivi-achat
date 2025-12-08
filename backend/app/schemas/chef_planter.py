@@ -44,4 +44,5 @@ class ChefPlanteurWithStats(ChefPlanteurResponse):
     restant_kg: float
     pourcentage_utilise: float
     nombre_planteurs: int
+    est_exploite: bool
     alerte: Optional[str] = None  # Message si limite planteurs > quantité déclarée

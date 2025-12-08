@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journal d'Audit - CocoaTrack</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Loader */
+        #pageLoader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #pageContent {
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
+        }
+        
+        #pageContent.loaded {
+            opacity: 1;
+        }
+        
+        <style>
+        .audit-log-card {
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+            transition: transform 0.2s;
+        }
+        
+        .audit-log-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .action-badge {
+            font-size: 0.875rem;
+            padding: 0.35em 0.65em;
+        }
+        
+        .action-CREATE { background-color: #10b981; }
+        .action-UPDATE { background-color: #3b82f6; }
+        .action-DELETE { background-color: #ef4444; }
+        .action-LOGIN_SUCCESS { background-color: #8b5cf6; }
+        .action-LOGIN_FAILED { background-color: #f59e0b; }
+        .action-LOGOUT { background-color: #6b7280; }
+        
+        .changes-diff {
+            background: #f9fafb;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader -->
+    <div id="pageLoader">
+        <div class="loader-spinner"></div>
+    </div>
+
+    <!-- Navigation supprimée pour intégration en iframe -->
+
+    <div class="container mt-4" id="pageContent">
+    <div id="auditPage">
+        <h1 class="mb-4">📋 Journal d'Audit</h1>
+
+        <!-- Statistiques -->
+        <div class="row" id="statsSection">
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-label">Total Actions</div>
+                    <div class="stats-number" id="totalLogs">-</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-label">Créations</div>
+                    <div class="stats-number" id="createCount">-</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-label">Modifications</div>
+                    <div class="stats-number" id="updateCount">-</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-label">Suppressions</div>
+                    <div class="stats-number" id="deleteCount">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtres -->
+        <div class="filter-section">
+            <h5 class="mb-3">🔍 Filtres</h5>
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <select class="form-select" id="actionFilter">
+                        <option value="">Toutes les actions</option>
+                        <option value="CREATE">Création</option>
+                        <option value="UPDATE">Modification</option>
+                        <option value="DELETE">Suppression</option>
+                        <option value="LOGIN_SUCCESS">Connexion</option>
+                        <option value="LOGOUT">Déconnexion</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <select class="form-select" id="entityFilter">
+                        <option value="">Toutes les entités</option>
+                        <option value="Planter">Planteurs</option>
+                        <option value="Delivery">Livraisons</option>
+                        <option value="Payment">Paiements</option>
+                        <option value="User">Utilisateurs</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <input type="date" class="form-control" id="fromDateFilter">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <input type="date" class="form-control" id="toDateFilter">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <button class="btn btn-primary w-100" id="applyFiltersBtn">Appliquer</button>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-10 mb-2">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Rechercher...">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <button class="btn btn-success w-100" id="exportCsvBtn">📥 Export CSV</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Liste des logs -->
+        <div id="auditLogs">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Chargement...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav id="paginationNav" class="mt-4" style="display: none;">
+            <ul class="pagination justify-content-center" id="pagination"></ul>
+        </nav>
+    </div>
+    </div>
+
+    <!-- Modal détails -->
+    <div class="modal fade" id="detailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Détails du Log</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modalBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/audit.js"></script>
+    <script>
+        // Masquer le loader une fois la page chargée
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.getElementById('pageLoader').style.display = 'none';
+                document.getElementById('pageContent').classList.add('loaded');
+            }, 300);
+        });
+    </script>
+</body>
+</html>

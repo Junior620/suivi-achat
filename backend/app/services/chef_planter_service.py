@@ -115,6 +115,7 @@ def get_production_stats(db: Session, chef_id: UUID):
         "restant_kg": restant,
         "pourcentage_utilise": round(pourcentage, 2),
         "nombre_planteurs": len(planteurs),
+        "est_exploite": len(planteurs) > 0,
         "alerte": alerte,
         "created_at": chef.created_at,
         "updated_at": chef.updated_at

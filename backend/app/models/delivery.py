@@ -17,8 +17,7 @@ class Delivery(Base):
     quantity_kg = Column(Numeric(12, 2), nullable=False)  # Quantité déchargée
     load_location = Column(String, nullable=False, index=True)
     unload_location = Column(String, nullable=False, index=True)
-    cocoa_quality = Column(String, nullable=False, index=True)
-    quality = Column(String, nullable=True, index=True)  # Alias pour compatibilité traçabilité
+    quality = Column(String, nullable=False, index=True)  # Qualité du cacao
     vehicle = Column(String, nullable=True)  # Véhicule utilisé
     notes = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -26,4 +25,4 @@ class Delivery(Base):
     
     planter = relationship("Planter", back_populates="deliveries")
     payments = relationship("Payment", back_populates="delivery", cascade="all, delete-orphan")
-    traceability = relationship("TraceabilityRecord", back_populates="delivery", uselist=False, cascade="all, delete-orphan")
+    # traceability = relationship("TraceabilityRecord", back_populates="delivery", uselist=False, cascade="all, delete-orphan")

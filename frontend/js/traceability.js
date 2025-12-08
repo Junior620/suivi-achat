@@ -86,6 +86,13 @@ function switchTraceabilityTab(tab) {
 }
 
 function initQrScanner() {
+    // Vérifier que l'élément existe
+    const qrReaderElement = document.getElementById('qrReader');
+    if (!qrReaderElement) {
+        console.log("Élément qrReader non trouvé");
+        return;
+    }
+    
     // Utiliser html5-qrcode library (à charger via CDN)
     if (typeof Html5Qrcode !== 'undefined') {
         const html5QrCode = new Html5Qrcode("qrReader");
@@ -104,17 +111,17 @@ function initQrScanner() {
                 // Ignorer les erreurs de scan
             }
         ).catch(err => {
-            console.log("Erreur d'initialisation du scanner:", err);
-            document.getElementById('qrReader').innerHTML = `
-                <div class="alert alert-warning">
-                    <p>Impossible d'accéder à la caméra. Utilisez la saisie manuelle ci-dessous.</p>
+            console.log("Scanner QR non disponible (caméra non accessible)");
+            qrReaderElement.innerHTML = `
+                <div class="alert alert-info" style="background: #e7f3ff; border: 1px solid #b3d9ff; padding: 15px; border-radius: 8px;">
+                    <p style="margin: 0;">📱 Scanner QR Code non disponible. Utilisez la saisie manuelle ci-dessous.</p>
                 </div>
             `;
         });
         
         qrScanner = html5QrCode;
     } else {
-        document.getElementById('qrReader').innerHTML = `
+        qrReaderElement.innerHTML = `
             <div class="alert alert-info">
                 <p>Scanner QR Code non disponible. Utilisez la saisie manuelle ci-dessous.</p>
             </div>

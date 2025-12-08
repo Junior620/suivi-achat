@@ -60,3 +60,26 @@ backend/alembic/versions/*.pyc
 
 # Azure
 .azure/
+
+# Uploads
+backend/uploads/
+uploads/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*_backup.*
+
+# Migration scripts (keep only in migrations folder)
+migration_*.sql
+apply_migration_*.py
+apply_migration_*.ps1
+
+# Test files
+test_*.py
+test_*.ps1
+
+# Documentation temporaire
+*_TEMP.md
+*_OLD.md

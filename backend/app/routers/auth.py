@@ -1,19 +1,67 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from jose import JWTError
+from datetime import datetime, timedelta
 from ..database import get_db
 from ..schemas import LoginRequest, TokenResponse, RefreshRequest, UserResponse, UserCreate
 from ..services import auth_service
 from ..middleware.auth import get_current_user
 from ..utils.security import decode_token
 from ..models import User
+from ..models.session import Session as SessionModel
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=TokenResponse)
-def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+def login(login_data: LoginRequest, request: Request, db: Session = Depends(get_db)):
     user = auth_service.authenticate_user(db, login_data)
     tokens = auth_service.generate_tokens(user)
+    
+    # Créer un enregistrement de session
+    try:
+        # Vérifier si une session existe déjà avec ce token
+        existing_session = db.query(SessionModel).filter(
+            SessionModel.session_token == tokens['access_token'][:50]
+        ).first()
+        
+        if existing_session:
+            # Mettre à jour la session existante
+            existing_session.last_activity = datetime.utcnow()
+            existing_session.expires_at = datetime.utcnow() + timedelta(days=7)
+            existing_session.is_active = True
+            existing_session.ip_address = request.client.host if request.client else None
+            existing_session.user_agent = request.headers.get('user-agent', 'Unknown')
+        else:
+            # Créer une nouvelle session
+            session = SessionModel(
+                user_id=str(user.id),
+                session_token=tokens['access_token'][:50],  # Stocker une partie du token
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get('user-agent', 'Unknown'),
+                expires_at=datetime.utcnow() + timedelta(days=7),  # 7 jours (durée raisonnable)
+                is_active=True,
+                last_activity=datetime.utcnow()
+            )
+            db.add(session)
+        db.commit()
+    except Exception as e:
+        print(f"Error creating session record: {e}")
+        db.rollback()
+        # Ne pas bloquer le login si la création de session échoue
+    
+    # Enregistrer la connexion dans l'audit
+    try:
+        from ..services.audit_service import AuditService
+        AuditService.log_login(
+            db=db,
+            user=user,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get('user-agent'),
+            success=True
+        )
+    except Exception as e:
+        print(f"Error logging audit: {e}")
+    
     return TokenResponse(**tokens)
 
 @router.post("/register", response_model=UserResponse)

@@ -10,7 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.database import Base
-from app.models import user, planter, delivery, chef_planteur, collecte, notification, cooperative, payment, traceability
+# Import all models to ensure they're registered with SQLAlchemy
+from app.models import User, Planter, Delivery, ChefPlanteur, Collecte, Notification, Session, Payment
 
 # this is the Alembic Config object
 config = context.config

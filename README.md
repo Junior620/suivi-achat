@@ -159,6 +159,43 @@ python test_traceability.py
 
 Voir `TRACEABILITY_README.md` et `DEPLOIEMENT_TRACEABILITY.md` pour plus de détails.
 
+## 📊 Rapports Automatiques
+
+Le système génère et envoie automatiquement des rapports par email:
+
+- ✅ **Rapports hebdomadaires** (tous les lundis à 8h)
+- ✅ **Rapports mensuels** (le 1er de chaque mois à 8h)
+- ✅ **Génération PDF** professionnelle
+- ✅ **Envoi par email** avec graphiques et tableaux
+- ✅ **Comparaisons** avec périodes précédentes
+- ✅ **Top planteurs** et alertes automatiques
+
+### Configuration des Rapports
+
+1. **Configurer SMTP dans `.env`**:
+```bash
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=votre-email@gmail.com
+SMTP_PASSWORD=votre-mot-de-passe-app
+FROM_EMAIL=votre-email@gmail.com
+FROM_NAME=CocoaTrack
+REPORT_RECIPIENTS=admin@example.com,manager@example.com
+```
+
+2. **Tester la configuration**:
+```bash
+python test_smtp.py
+```
+
+3. **Accéder à l'interface**:
+- Ouvrir `frontend/reports.html`
+- Générer des rapports manuellement
+- Télécharger en PDF
+- Envoyer par email
+
+Voir `RAPPORTS_AUTOMATIQUES.md` pour la documentation complète.
+
 ## Rôles et Permissions
 
 - **viewer**: Lecture seule

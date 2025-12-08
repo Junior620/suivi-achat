@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime, Enum
+from sqlalchemy import Column, String, Float, Date, ForeignKey, DateTime, Enum
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
+import uuid
 from ..database import Base
 
 class PaymentMethod(str, enum.Enum):
@@ -17,13 +19,13 @@ class PaymentStatus(str, enum.Enum):
 class Payment(Base):
     __tablename__ = "payments"
 
-    id = Column(Integer, primary_key=True, index=True)
-    planter_id = Column(Integer, ForeignKey("planters.id"), nullable=False)
-    delivery_id = Column(Integer, ForeignKey("deliveries.id"), nullable=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    planter_id = Column(UUID(as_uuid=True), ForeignKey("planters.id"), nullable=False)
+    delivery_id = Column(UUID(as_uuid=True), ForeignKey("deliveries.id"), nullable=True)
     
     montant = Column(Float, nullable=False)
-    methode = Column(Enum(PaymentMethod), default=PaymentMethod.VIREMENT)
-    statut = Column(Enum(PaymentStatus), default=PaymentStatus.COMPLETED)
+    methode = Column(String, nullable=False)
+    statut = Column(String, default="COMPLETED")
     
     date_paiement = Column(Date, nullable=False)
     reference = Column(String, nullable=True)  # Numéro de transaction/chèque
@@ -31,7 +33,7 @@ class Payment(Base):
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     
     # Relations
     planter = relationship("Planter", back_populates="payments")

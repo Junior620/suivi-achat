@@ -2,27 +2,65 @@
 // En production (Vercel), utilise l'URL Azure
 // En développement local, utilise localhost:8000
 const getApiBaseUrl = () => {
+    const hostname = window.location.hostname;
+    
+    console.log('🔍 Détection hostname:', hostname);
+    
     // Si on est sur Vercel (domaine .vercel.app) - utiliser HTTPS
-    if (window.location.hostname.includes('vercel.app')) {
+    if (hostname.includes('vercel.app')) {
+        console.log('📍 Mode: Production (Vercel)');
         return 'https://cocoatrack-api-20251129203507.azurewebsites.net/api/v1';
     }
-    // Si on est en local - utiliser HTTP
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return `http://${window.location.hostname}:8000/api/v1`;
+    
+    // Si on est en local (localhost, 127.0.0.1, ou IP locale 192.168.x.x) - utiliser HTTP
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        console.log('📍 Mode: Local (localhost)');
+        return `http://localhost:8000/api/v1`;
     }
+    
+    // Si on accède via une IP locale (depuis mobile/réseau)
+    if (hostname.startsWith('192.168.') || hostname.startsWith('10.') || hostname.startsWith('172.')) {
+        const backendUrl = `http://${hostname}:8000/api/v1`;
+        console.log('📍 Mode: Réseau local');
+        console.log('🌐 Backend URL:', backendUrl);
+        return backendUrl;
+    }
+    
     // Par défaut, utiliser HTTPS
+    console.log('📍 Mode: Production (défaut)');
     return 'https://cocoatrack-api-20251129203507.azurewebsites.net/api/v1';
 };
 
 const API_BASE = getApiBaseUrl();
+console.log('✅ API Base URL configurée:', API_BASE);
 
 class API {
     constructor() {
         this.baseUrl = API_BASE;
+        this.refreshInterval = null;
+        this.startTokenRefreshTimer();
     }
 
     getToken() {
         return localStorage.getItem('access_token');
+    }
+    
+    startTokenRefreshTimer() {
+        // Rafraîchir le token toutes les 50 minutes (avant expiration à 60 min)
+        this.refreshInterval = setInterval(async () => {
+            const token = this.getToken();
+            if (token) {
+                console.log('⏰ Rafraîchissement automatique du token...');
+                await this.refreshToken();
+            }
+        }, 50 * 60 * 1000); // 50 minutes
+    }
+    
+    stopTokenRefreshTimer() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+        }
     }
 
     getHeaders() {
@@ -48,7 +86,22 @@ class API {
             if (response.status === 401) {
                 // Si c'est la page de login, ne pas rediriger
                 if (!endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
-                    // Déconnecter SSE avant de nettoyer le localStorage
+                    // Essayer de rafraîchir le token
+                    const refreshed = await this.refreshToken();
+                    if (refreshed) {
+                        // Réessayer la requête avec le nouveau token
+                        config.headers = this.getHeaders();
+                        const retryResponse = await fetch(url, config);
+                        if (retryResponse.ok) {
+                            if (retryResponse.headers.get('content-type')?.includes('application/json')) {
+                                return await retryResponse.json();
+                            }
+                            return retryResponse;
+                        }
+                    }
+                    
+                    // Si le refresh a échoué, déconnecter
+                    console.log('❌ Token expiré et refresh échoué, déconnexion...');
                     if (typeof disconnectNotificationStream === 'function') {
                         disconnectNotificationStream();
                     }
@@ -58,15 +111,31 @@ class API {
                 }
             }
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || 'Email ou mot de passe incorrect');
+                let errorMessage = `Erreur ${response.status}`;
+                try {
+                    const error = await response.json();
+                    errorMessage = error.detail || error.message || JSON.stringify(error);
+                } catch (e) {
+                    errorMessage = await response.text() || errorMessage;
+                }
+                throw new Error(errorMessage);
             }
             if (response.headers.get('content-type')?.includes('application/json')) {
                 return await response.json();
             }
             return response;
         } catch (error) {
-            console.error('API Error:', error);
+            // Améliorer l'affichage de l'erreur
+            let errorMessage = 'Erreur inconnue';
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            } else if (typeof error === 'string') {
+                errorMessage = error;
+            } else if (error && typeof error === 'object') {
+                errorMessage = JSON.stringify(error);
+            }
+            console.error('API Error:', errorMessage);
+            console.error('Error details:', error);
             
             // Si offline et que c'est une requête GET, essayer le cache
             if (!navigator.onLine && options.method !== 'POST' && options.method !== 'PUT' && options.method !== 'DELETE') {
@@ -125,6 +194,41 @@ class API {
 
     async getMe() {
         return this.request('/auth/me');
+    }
+
+    async refreshToken() {
+        try {
+            const refreshToken = localStorage.getItem('refresh_token');
+            if (!refreshToken) {
+                console.warn('⚠️ Pas de refresh token disponible');
+                return false;
+            }
+
+            console.log('🔄 Rafraîchissement du token...');
+            const response = await fetch(`${this.baseUrl}/auth/refresh`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${refreshToken}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('access_token', data.access_token);
+                if (data.refresh_token) {
+                    localStorage.setItem('refresh_token', data.refresh_token);
+                }
+                console.log('✅ Token rafraîchi avec succès');
+                return true;
+            } else {
+                console.warn('⚠️ Échec du rafraîchissement du token');
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Erreur lors du rafraîchissement du token:', error);
+            return false;
+        }
     }
 
     // Planters
@@ -435,6 +539,62 @@ class API {
 
     async getPlanterBalance(planterId) {
         return this.request(`/payments/balances/${planterId}/`);
+    }
+
+    // Invoices
+    async getInvoices(params = {}) {
+        const cleanParams = Object.fromEntries(
+            Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+        );
+        const query = new URLSearchParams(cleanParams).toString();
+        return this.request(`/invoices?${query}`);
+    }
+
+    async createInvoice(data) {
+        return this.request('/invoices', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async updateInvoiceStatus(id, status) {
+        return this.request(`/invoices/${id}/status`, {
+            method: 'PUT',
+            body: JSON.stringify({ status })
+        });
+    }
+
+    getInvoicePdfUrl(id) {
+        const token = this.getToken();
+        return `${this.baseUrl}/invoices/${id}/pdf?token=${token}`;
+    }
+
+    async downloadInvoicePdf(id) {
+        const url = this.getInvoicePdfUrl(id);
+        window.open(url, '_blank');
+    }
+
+    // Generic methods for flexibility
+    async get(endpoint) {
+        return this.request(endpoint, { method: 'GET' });
+    }
+
+    async post(endpoint, data = {}) {
+        return this.request(endpoint, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async put(endpoint, data = {}) {
+        return this.request(endpoint, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async delete(endpoint) {
+        return this.request(endpoint, { method: 'DELETE' });
     }
 }
 

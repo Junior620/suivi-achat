@@ -1,12 +1,51 @@
 async function loadAdminPage(container) {
+    const user = JSON.parse(localStorage.getItem('user')) || {};
+    const isAdmin = user.role === 'admin';
+    const isManager = user.role === 'manager';
+    
     container.innerHTML = `
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">⚙️ Administration des utilisateurs</h2>
-                <button id="addUserBtn" class="btn btn-primary">+ Nouvel utilisateur</button>
+        <div class="admin-container">
+            <h1 class="mb-4">⚙️ Administration</h1>
+            
+            <!-- Menu de navigation -->
+            <div class="admin-tabs mb-4">
+                ${isAdmin ? '<button class="admin-tab active" data-tab="users">👥 Utilisateurs</button>' : ''}
+                ${isAdmin || isManager ? '<button class="admin-tab" data-tab="audit">📋 Journal d\'Audit</button>' : ''}
+                <button class="admin-tab" data-tab="sessions">🔐 Mes Sessions</button>
+                ${isAdmin || isManager ? '<button class="admin-tab" data-tab="reports">📊 Rapports</button>' : ''}
             </div>
-            <div id="usersTable"></div>
+            
+            <!-- Contenu des onglets -->
+            <div id="adminTabContent"></div>
         </div>
+        
+        <style>
+            .admin-tabs {
+                display: flex;
+                gap: 10px;
+                border-bottom: 2px solid #e0e0e0;
+                padding-bottom: 10px;
+            }
+            
+            .admin-tab {
+                padding: 10px 20px;
+                border: none;
+                background: #f5f5f5;
+                cursor: pointer;
+                border-radius: 8px 8px 0 0;
+                font-weight: 500;
+                transition: all 0.3s;
+            }
+            
+            .admin-tab:hover {
+                background: #e0e0e0;
+            }
+            
+            .admin-tab.active {
+                background: #667eea;
+                color: white;
+            }
+        </style>
         
         <div id="userModal" class="modal">
             <div class="modal-content">
@@ -130,83 +169,226 @@ async function loadAdminPage(container) {
     }
 
     function closeModal() {
-        document.getElementById('userModal').classList.remove('show');
-        document.getElementById('roleModal').classList.remove('show');
-        document.getElementById('userForm').reset();
-        document.getElementById('roleForm').reset();
+        const userModal = container.querySelector('#userModal');
+        const roleModal = container.querySelector('#roleModal');
+        const userForm = container.querySelector('#userForm');
+        const roleForm = container.querySelector('#roleForm');
+        
+        if (userModal) userModal.classList.remove('show');
+        if (roleModal) roleModal.classList.remove('show');
+        if (userForm) userForm.reset();
+        if (roleForm) roleForm.reset();
     }
 
-    document.getElementById('addUserBtn').addEventListener('click', openModal);
-
-    document.querySelectorAll('.close, .close-modal').forEach(el => {
-        el.addEventListener('click', closeModal);
-    });
-
-    // Créer un utilisateur
-    document.getElementById('userForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = {
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value,
-            role: document.getElementById('role').value
-        };
-
-        try {
-            await api.createUser(formData);
-            showToast('Utilisateur créé avec succès');
-            closeModal();
-            loadTable();
-        } catch (error) {
-            showToast(error.message, 'error');
+    // Gestion des onglets
+    const tabs = container.querySelectorAll('.admin-tab');
+    const tabContent = container.querySelector('#adminTabContent');
+    
+    function switchTab(tabName) {
+        // Mettre à jour les onglets actifs
+        tabs.forEach(tab => {
+            if (tab.dataset.tab === tabName) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+        
+        // Charger le contenu approprié
+        switch(tabName) {
+            case 'users':
+                loadUsersTab();
+                break;
+            case 'audit':
+                loadAuditTab();
+                break;
+            case 'sessions':
+                loadSessionsTab();
+                break;
+            case 'reports':
+                loadReportsTab();
+                break;
         }
-    });
+    }
+    
+    function loadUsersTab() {
+        tabContent.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">👥 Gestion des utilisateurs</h2>
+                    <button id="addUserBtn" class="btn btn-primary">+ Nouvel utilisateur</button>
+                </div>
+                <div id="usersTable"></div>
+            </div>
+            
+            <div id="userModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Nouvel utilisateur</h3>
+                        <span class="close">&times;</span>
+                    </div>
+                    <form id="userForm">
+                        <div class="form-group">
+                            <label>Email *</label>
+                            <input type="email" id="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Mot de passe *</label>
+                            <input type="password" id="password" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label>Rôle *</label>
+                            <select id="role" required>
+                                <option value="viewer">Viewer (Lecture seule)</option>
+                                <option value="manager">Manager (CRUD)</option>
+                                <option value="admin">Admin (Complet)</option>
+                            </select>
+                        </div>
+                        <div class="actions">
+                            <button type="submit" class="btn btn-primary">Créer</button>
+                            <button type="button" class="close-modal btn btn-secondary">Annuler</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
-    // Modifier le rôle
-    document.getElementById('roleForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const userId = document.getElementById('editUserId').value;
-        const newRole = document.getElementById('editRole').value;
-
-        try {
-            await api.updateUserRole(userId, newRole);
-            showToast('Rôle modifié avec succès');
-            closeModal();
-            loadTable();
-        } catch (error) {
-            showToast(error.message, 'error');
+            <div id="roleModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Modifier le rôle</h3>
+                        <span class="close">&times;</span>
+                    </div>
+                    <form id="roleForm">
+                        <input type="hidden" id="editUserId">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="text" id="editUserEmail" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Nouveau rôle *</label>
+                            <select id="editRole" required>
+                                <option value="viewer">Viewer (Lecture seule)</option>
+                                <option value="manager">Manager (CRUD)</option>
+                                <option value="admin">Admin (Complet)</option>
+                            </select>
+                        </div>
+                        <div class="actions">
+                            <button type="submit" class="btn btn-primary">Modifier</button>
+                            <button type="button" class="close-modal btn btn-secondary">Annuler</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        // Attacher les event listeners après création du DOM
+        const addUserBtn = tabContent.querySelector('#addUserBtn');
+        if (addUserBtn) {
+            addUserBtn.addEventListener('click', openModal);
         }
-    });
+        
+        tabContent.querySelectorAll('.close, .close-modal').forEach(el => {
+            el.addEventListener('click', closeModal);
+        });
+        
+        // Créer un utilisateur
+        const userForm = tabContent.querySelector('#userForm');
+        if (userForm) {
+            userForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = {
+                    email: tabContent.querySelector('#email').value,
+                    password: tabContent.querySelector('#password').value,
+                    role: tabContent.querySelector('#role').value
+                };
 
-    // Event delegation pour les boutons d'action
-    document.getElementById('usersTable').addEventListener('click', async (e) => {
-        // Modifier le rôle
-        if (e.target.classList.contains('edit-role')) {
-            const userId = e.target.dataset.id;
-            const userEmail = e.target.dataset.email;
-            const userRole = e.target.dataset.role;
-
-            document.getElementById('editUserId').value = userId;
-            document.getElementById('editUserEmail').value = userEmail;
-            document.getElementById('editRole').value = userRole;
-            document.getElementById('roleModal').classList.add('show');
-        }
-
-        // Supprimer l'utilisateur
-        if (e.target.classList.contains('delete-user') && !e.target.disabled) {
-            const userId = e.target.dataset.id;
-            const userEmail = e.target.dataset.email;
-
-            if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${userEmail} ?`)) {
                 try {
-                    await api.deleteUser(userId);
-                    showToast('Utilisateur supprimé avec succès');
+                    await api.createUser(formData);
+                    showToast('Utilisateur créé avec succès');
+                    closeModal();
                     loadTable();
                 } catch (error) {
                     showToast(error.message, 'error');
                 }
-            }
+            });
         }
-    });
+        
+        // Modifier le rôle
+        const roleForm = tabContent.querySelector('#roleForm');
+        if (roleForm) {
+            roleForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const userId = tabContent.querySelector('#editUserId').value;
+                const newRole = tabContent.querySelector('#editRole').value;
 
-    loadTable();
+                try {
+                    await api.updateUserRole(userId, newRole);
+                    showToast('Rôle modifié avec succès');
+                    closeModal();
+                    loadTable();
+                } catch (error) {
+                    showToast(error.message, 'error');
+                }
+            });
+        }
+        
+        // Event delegation pour les boutons d'action
+        const usersTable = tabContent.querySelector('#usersTable');
+        if (usersTable) {
+            usersTable.addEventListener('click', async (e) => {
+                // Modifier le rôle
+                if (e.target.classList.contains('edit-role')) {
+                    const userId = e.target.dataset.id;
+                    const userEmail = e.target.dataset.email;
+                    const userRole = e.target.dataset.role;
+
+                    tabContent.querySelector('#editUserId').value = userId;
+                    tabContent.querySelector('#editUserEmail').value = userEmail;
+                    tabContent.querySelector('#editRole').value = userRole;
+                    tabContent.querySelector('#roleModal').classList.add('show');
+                }
+
+                // Supprimer l'utilisateur
+                if (e.target.classList.contains('delete-user') && !e.target.disabled) {
+                    const userId = e.target.dataset.id;
+                    const userEmail = e.target.dataset.email;
+
+                    if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${userEmail} ?`)) {
+                        try {
+                            await api.deleteUser(userId);
+                            showToast('Utilisateur supprimé avec succès');
+                            loadTable();
+                        } catch (error) {
+                            showToast(error.message, 'error');
+                        }
+                    }
+                }
+            });
+        }
+        
+        loadTable();
+    }
+    
+    function loadAuditTab() {
+        tabContent.innerHTML = '<iframe src="audit.html" style="width: 100%; height: 800px; border: none;"></iframe>';
+    }
+    
+    function loadSessionsTab() {
+        tabContent.innerHTML = '<iframe src="sessions.html" style="width: 100%; height: 800px; border: none;"></iframe>';
+    }
+    
+    function loadReportsTab() {
+        tabContent.innerHTML = '<iframe src="reports.html" style="width: 100%; height: 800px; border: none;"></iframe>';
+    }
+    
+    // Event listeners pour les onglets
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            switchTab(tab.dataset.tab);
+        });
+    });
+    
+    // Charger l'onglet par défaut
+    const defaultTab = isAdmin ? 'users' : 'sessions';
+    switchTab(defaultTab);
 }

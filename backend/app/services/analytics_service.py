@@ -99,7 +99,7 @@ def get_summary_by_quality(
     quality: Optional[str] = None
 ):
     query = db.query(
-        Delivery.cocoa_quality,
+        Delivery.quality,
         Planter.name,
         func.sum(Delivery.quantity_kg).label("total_unloaded_kg")
     ).join(Planter, Delivery.planter_id == Planter.id)
@@ -109,13 +109,13 @@ def get_summary_by_quality(
     if to_date:
         query = query.filter(Delivery.date <= to_date)
     if quality:
-        query = query.filter(Delivery.cocoa_quality.ilike(f"%{quality}%"))
+        query = query.filter(Delivery.quality.ilike(f"%{quality}%"))
     
-    results = query.group_by(Delivery.cocoa_quality, Planter.name).order_by(Delivery.cocoa_quality, Planter.name).all()
+    results = query.group_by(Delivery.quality, Planter.name).order_by(Delivery.quality, Planter.name).all()
     total = sum(r.total_unloaded_kg for r in results)
     
     return {
-        "items": [{"quality": r.cocoa_quality, "planter": r.name, "total_unloaded_kg": float(r.total_unloaded_kg)} for r in results],
+        "items": [{"quality": r.quality, "planter": r.name, "total_unloaded_kg": float(r.total_unloaded_kg)} for r in results],
         "total": float(total)
     }
 

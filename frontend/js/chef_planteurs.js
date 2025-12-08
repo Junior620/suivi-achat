@@ -233,10 +233,37 @@ async function loadChefPlanteursPage(container) {
     }
 
     async function loadTable() {
-        const data = await api.getChefPlanteursStats();
+        try {
+            const response = await api.getChefPlanteursStats();
+            console.log('Chef Planteurs - Response:', response);
+            
+            // Gérer différents formats de réponse
+            let data = [];
+            if (Array.isArray(response)) {
+                data = response;
+            } else if (response && Array.isArray(response.items)) {
+                data = response.items;
+            } else if (response && response.data && Array.isArray(response.data)) {
+                data = response.data;
+            } else {
+                console.warn('Unexpected response format:', response);
+                data = [];
+            }
+            
+            console.log('Chef Planteurs - Data array:', data);
         
-        // Calculer le statut d'exploitation pour chaque fournisseur
+        // Ajouter des valeurs par défaut pour les champs manquants
         data.forEach(chef => {
+            // Valeurs par défaut si les champs n'existent pas
+            chef.quantite_max_kg = chef.quantite_max_kg || 0;
+            chef.total_livre_kg = chef.total_livre_kg || 0;
+            chef.total_limite_planteurs_kg = chef.total_limite_planteurs_kg || 0;
+            chef.restant_kg = chef.quantite_max_kg - chef.total_livre_kg;
+            chef.nombre_planteurs = chef.nombre_planteurs || 0;
+            chef.pourcentage_utilise = chef.quantite_max_kg > 0 
+                ? (chef.total_livre_kg / chef.quantite_max_kg) * 100 
+                : 0;
+            
             // Un fournisseur est exploité s'il a livré du cacao (total_livre_kg > 0)
             chef.est_exploite = chef.total_livre_kg > 0;
             
@@ -292,16 +319,16 @@ async function loadChefPlanteursPage(container) {
                     {title: "Téléphone", field: "phone", minWidth: 120, formatter: (cell) => cell.getValue() || '-'},
                     {title: "CNI", field: "cni", minWidth: 120, formatter: (cell) => cell.getValue() || '-'},
                     {title: "Coopérative", field: "cooperative", minWidth: 150, formatter: (cell) => cell.getValue() || '-'},
-                    {title: "Quantité Max (kg)", field: "quantite_max_kg", minWidth: 130, formatter: (cell) => parseFloat(cell.getValue()).toFixed(0)},
-                    {title: "Livré (kg)", field: "total_livre_kg", minWidth: 110, formatter: (cell) => parseFloat(cell.getValue()).toFixed(2)},
+                    {title: "Quantité Max (kg)", field: "quantite_max_kg", minWidth: 130, formatter: (cell) => parseFloat(cell.getValue() || 0).toFixed(0)},
+                    {title: "Livré (kg)", field: "total_livre_kg", minWidth: 110, formatter: (cell) => parseFloat(cell.getValue() || 0).toFixed(2)},
                     {title: "Limite Planteurs (kg)", field: "total_limite_planteurs_kg", minWidth: 150, formatter: (cell) => {
-                        const val = parseFloat(cell.getValue());
+                        const val = parseFloat(cell.getValue() || 0);
                         const row = cell.getRow().getData();
                         const color = val > row.quantite_max_kg ? '#dc3545' : '#28a745';
                         return `<span style="color: ${color}; font-weight: bold;">${val.toFixed(0)}</span>`;
                     }},
                     {title: "Restant (kg)", field: "restant_kg", minWidth: 120, formatter: (cell) => {
-                        const val = parseFloat(cell.getValue());
+                        const val = parseFloat(cell.getValue() || 0);
                         const color = val < 500 ? '#dc3545' : val < 1000 ? '#ffc107' : '#28a745';
                         return `<span style="color: ${color}; font-weight: bold;">${val.toFixed(2)}</span>`;
                     }},
@@ -326,6 +353,15 @@ async function loadChefPlanteursPage(container) {
                     openViewModal(row.getData());
                 }
             });
+        }
+        } catch (error) {
+            console.error('Erreur lors du chargement des fournisseurs:', error);
+            showToast('Erreur lors du chargement des fournisseurs', 'error');
+            
+            // Initialiser avec un tableau vide en cas d'erreur
+            document.getElementById('totalFournisseurs').textContent = '0';
+            document.getElementById('fournisseursExploites').textContent = '0';
+            document.getElementById('fournisseursNonExploites').textContent = '0';
         }
     }
 
