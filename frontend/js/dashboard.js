@@ -5,6 +5,17 @@ let dashboardData = {};
 let dashboardRefreshInterval = null;
 
 async function loadDashboardPage(container) {
+    // Afficher un loader pendant le chargement
+    container.innerHTML = `
+        <div class="dashboard-loading">
+            <div class="loading-spinner"></div>
+            <p>Chargement du dashboard...</p>
+        </div>
+    `;
+    
+    // Attendre un peu pour l'effet visuel
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     container.innerHTML = `
         <div class="dashboard-container">
             <!-- KPIs Section -->
@@ -185,23 +196,40 @@ function updateKPIs() {
         return;
     }
     
-    // Volume
-    kpiVolume.textContent = 
-        `${dashboardData.totalVolume.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} kg`;
-    
-    // Livraisons
-    kpiLivraisons.textContent = 
-        dashboardData.totalLivraisons.toLocaleString('fr-FR');
-    
-    // Moyenne
-    kpiMoyenne.textContent = 
-        `${dashboardData.moyenneParLivraison.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} kg`;
-    
-    // Planteurs
-    kpiPlanteurs.textContent = dashboardData.activePlanters;
+    // Animer les KPIs avec compteur incrémental
+    animateCounter(kpiVolume, 0, dashboardData.totalVolume, 1500, ' kg');
+    animateCounter(kpiLivraisons, 0, dashboardData.totalLivraisons, 1200, '');
+    animateCounter(kpiMoyenne, 0, dashboardData.moyenneParLivraison, 1300, ' kg', 1);
+    animateCounter(kpiPlanteurs, 0, dashboardData.activePlanters, 1000, '');
 
     // Calculer les tendances (comparaison avec période précédente)
     calculateTrends();
+}
+
+// Fonction d'animation de compteur
+function animateCounter(element, start, end, duration, suffix = '', decimals = 0) {
+    const startTime = performance.now();
+    const range = end - start;
+    
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function (ease-out)
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const current = start + (range * easeOut);
+        
+        element.textContent = current.toLocaleString('fr-FR', { 
+            maximumFractionDigits: decimals,
+            minimumFractionDigits: decimals 
+        }) + suffix;
+        
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        }
+    }
+    
+    requestAnimationFrame(update);
 }
 
 function calculateTrends() {
@@ -252,6 +280,19 @@ function initDashboardCharts() {
         return;
     }
     
+    // Configuration d'animation commune
+    const animationConfig = {
+        duration: 1500,
+        easing: 'easeInOutQuart',
+        delay: (context) => {
+            let delay = 0;
+            if (context.type === 'data' && context.mode === 'default') {
+                delay = context.dataIndex * 50;
+            }
+            return delay;
+        }
+    };
+    
     // Graphique d'évolution
     const evolutionCtx = evolutionCanvas.getContext('2d');
     dashboardCharts.evolution = new Chart(evolutionCtx, {
@@ -264,17 +305,53 @@ function initDashboardCharts() {
                 borderColor: '#2D5016',
                 backgroundColor: 'rgba(45, 80, 22, 0.1)',
                 tension: 0.4,
-                fill: true
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#2D5016',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointHoverBackgroundColor: '#E67E22',
+                pointHoverBorderColor: '#fff'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: animationConfig,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             plugins: {
-                legend: { display: true }
+                legend: { 
+                    display: true,
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    cornerRadius: 8,
+                    displayColors: true
+                }
             },
             scales: {
-                y: { beginAtZero: true }
+                y: { 
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
             }
         }
     });
@@ -287,14 +364,45 @@ function initDashboardCharts() {
             labels: [],
             datasets: [{
                 data: [],
-                backgroundColor: ['#2D5016', '#4A7C2A', '#E67E22', '#F39C12', '#8B6914']
+                backgroundColor: ['#2D5016', '#4A7C2A', '#E67E22', '#F39C12', '#8B6914'],
+                borderWidth: 3,
+                borderColor: '#fff',
+                hoverOffset: 15,
+                hoverBorderWidth: 4
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 1500,
+                easing: 'easeInOutQuart'
+            },
             plugins: {
-                legend: { position: 'bottom' }
+                legend: { 
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        usePointStyle: true,
+                        font: { size: 12 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value.toLocaleString()} kg (${percentage}%)`;
+                        }
+                    }
+                }
             }
         }
     });
@@ -308,18 +416,50 @@ function initDashboardCharts() {
             datasets: [{
                 label: 'Volume (kg)',
                 data: [],
-                backgroundColor: '#E67E22'
+                backgroundColor: (context) => {
+                    const index = context.dataIndex;
+                    const colors = ['#FFD700', '#C0C0C0', '#CD7F32', '#E67E22', '#E67E22'];
+                    return colors[index] || '#E67E22';
+                },
+                borderRadius: 8,
+                borderSkipped: false,
+                hoverBackgroundColor: '#2D5016'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: 'y',
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart',
+                delay: (context) => context.dataIndex * 100
+            },
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return `Volume: ${context.parsed.x.toLocaleString()} kg`;
+                        }
+                    }
+                }
             },
             scales: {
-                x: { beginAtZero: true }
+                x: { 
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    }
+                }
             }
         }
     });
