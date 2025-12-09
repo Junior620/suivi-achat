@@ -1,9 +1,21 @@
 #!/bin/bash
 
-# Test d'import pour debug
-echo "Testing Python imports..."
-python -c "from app.main import app; print('Import successful!')" || echo "Import failed!"
+# Azure App Service startup script for FastAPI
 
-# Démarrer uvicorn
-echo "Starting uvicorn..."
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level debug
+echo "Starting CocoaTrack Backend..."
+
+# Install dependencies if needed
+pip install -r requirements.txt
+
+# Run database migrations (if using Alembic)
+# alembic upgrade head
+
+# Start Gunicorn with Uvicorn workers
+gunicorn app.main:app \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:8000 \
+    --timeout 120 \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level info

@@ -32,7 +32,9 @@ const AppConfig = {
             
             case 'production':
             default:
-                return 'https://cocoatrack-api-20251129203507.azurewebsites.net/api/v1';
+                // Utiliser la variable d'environnement Vercel si disponible
+                // Sinon utiliser l'URL par défaut (à mettre à jour après déploiement Azure)
+                return window.ENV_API_URL || 'https://cocoatrack-api-prod.azurewebsites.net/api/v1';
         }
     },
     
@@ -49,7 +51,10 @@ const AppConfig = {
             
             case 'production':
             default:
-                return `wss://cocoatrack-api-20251129203507.azurewebsites.net${endpoint}`;
+                // Extraire le domaine de l'API URL et utiliser wss://
+                const apiUrl = this.getApiBaseUrl();
+                const domain = apiUrl.replace('https://', '').replace('/api/v1', '');
+                return `wss://${domain}${endpoint}`;
         }
     },
     

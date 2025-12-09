@@ -1,0 +1,123 @@
+# Azure App Service Deployment Configuration
+
+# Pour déployer:
+# 1. Créer une App Service sur Azure Portal
+# 2. Créer une PostgreSQL Flexible Server
+# 3. Configurer les variables d'environnement dans App Service
+# 4. Déployer via GitHub Actions ou Azure CLI
+
+# Configuration recommandée:
+# - App Service Plan: B1 (Basic) ou P1V2 (Production)
+# - PostgreSQL: Flexible Server B1ms (Burstable) ou GP_Gen5_2 (Production)
+# - Region: West Europe ou votre région préférée
+
+# Variables d'environnement à configurer dans Azure App Service:
+environment_variables:
+  # Database
+  DATABASE_URL: "postgresql://username:password@server.postgres.database.azure.com:5432/cocoatrack?sslmode=require"
+  
+  # JWT
+  JWT_SECRET: "votre-secret-jwt-32-caracteres-minimum"
+  SECRET_KEY: "votre-secret-key-32-caracteres-minimum"
+  JWT_ALGORITHM: "HS256"
+  ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+  REFRESH_TOKEN_EXPIRE_DAYS: "7"
+  
+  # Python
+  PYTHON_VERSION: "3.11"
+  
+  # App Service
+  SCM_DO_BUILD_DURING_DEPLOYMENT: "true"
+  WEBSITE_HTTPLOGGING_RETENTION_DAYS: "7"
+  
+  # CORS (mettre l'URL de votre frontend Vercel)
+  FRONTEND_URL: "https://votre-app.vercel.app"
+
+# Commandes de déploiement:
+deployment_commands:
+  # Via Azure CLI
+  azure_cli: |
+    # Login
+    az login
+    
+    # Créer un groupe de ressources
+    az group create --name cocoatrack-rg --location westeurope
+    
+    # Créer un App Service Plan
+    az appservice plan create \
+      --name cocoatrack-plan \
+      --resource-group cocoatrack-rg \
+      --sku B1 \
+      --is-linux
+    
+    # Créer une Web App
+    az webapp create \
+      --name cocoatrack-api \
+      --resource-group cocoatrack-rg \
+      --plan cocoatrack-plan \
+      --runtime "PYTHON:3.11"
+    
+    # Configurer le startup command
+    az webapp config set \
+      --name cocoatrack-api \
+      --resource-group cocoatrack-rg \
+      --startup-file "backend/startup.sh"
+    
+    # Déployer le code
+    az webapp up \
+      --name cocoatrack-api \
+      --resource-group cocoatrack-rg \
+      --runtime "PYTHON:3.11"
+    
+    # Créer PostgreSQL Flexible Server
+    az postgres flexible-server create \
+      --name cocoatrack-db \
+      --resource-group cocoatrack-rg \
+      --location westeurope \
+      --admin-user cocoatrack \
+      --admin-password "VotreMotDePasse123!" \
+      --sku-name Standard_B1ms \
+      --tier Burstable \
+      --storage-size 32 \
+      --version 15
+    
+    # Créer la base de données
+    az postgres flexible-server db create \
+      --resource-group cocoatrack-rg \
+      --server-name cocoatrack-db \
+      --database-name cocoatrack
+    
+    # Configurer le firewall pour autoriser Azure services
+    az postgres flexible-server firewall-rule create \
+      --resource-group cocoatrack-rg \
+      --name cocoatrack-db \
+      --rule-name AllowAzureServices \
+      --start-ip-address 0.0.0.0 \
+      --end-ip-address 0.0.0.0
+
+# GitHub Actions workflow (optionnel)
+github_actions: |
+  # Créer .github/workflows/azure-deploy.yml
+  name: Deploy to Azure
+  
+  on:
+    push:
+      branches: [ main ]
+  
+  jobs:
+    deploy:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        
+        - name: Set up Python
+          uses: actions/setup-python@v4
+          with:
+            python-version: '3.11'
+        
+        - name: Deploy to Azure Web App
+          uses: azure/webapps-deploy@v2
+          with:
+            app-name: 'cocoatrack-api'
+            publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+            package: ./backend
