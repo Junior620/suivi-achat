@@ -33,7 +33,8 @@ class SearchManager {
             results.livraisons = (deliveries.items || deliveries).filter(d => 
                 d.load_location?.toLowerCase().includes(query.toLowerCase()) ||
                 d.unload_location?.toLowerCase().includes(query.toLowerCase()) ||
-                d.cocoa_quality?.toLowerCase().includes(query.toLowerCase())
+                d.quality?.toLowerCase().includes(query.toLowerCase()) ||
+                d.vehicle?.toLowerCase().includes(query.toLowerCase())
             );
 
             // Rechercher dans les collectes
@@ -49,13 +50,14 @@ class SearchManager {
 
             // Rechercher dans les fournisseurs
             try {
-                const chefPlanters = await api.getChefPlanters({ size: 1000 });
+                const chefPlanters = await api.getChefPlanteurs();
                 results.fournisseurs = (chefPlanters.items || chefPlanters).filter(f => 
                     f.nom?.toLowerCase().includes(query.toLowerCase()) ||
-                    f.zone?.toLowerCase().includes(query.toLowerCase())
+                    f.zone?.toLowerCase().includes(query.toLowerCase()) ||
+                    f.telephone?.toLowerCase().includes(query.toLowerCase())
                 );
             } catch (error) {
-                console.log('Fournisseurs non disponibles');
+                console.log('Fournisseurs non disponibles:', error);
             }
 
         } catch (error) {
@@ -116,7 +118,7 @@ class SearchManager {
                     <div class="result-item" onclick="loadPage('deliveries')">
                         <div class="result-title">${d.date} - ${d.quantity_kg} kg</div>
                         <div class="result-details">
-                            ${d.load_location} → ${d.unload_location} | ${d.cocoa_quality}
+                            ${d.load_location} → ${d.unload_location} | ${d.quality || 'N/A'}
                         </div>
                     </div>
                 `;
@@ -190,7 +192,7 @@ class SearchManager {
 
         // Filtre par qualité
         if (filters.quality && filters.quality !== '') {
-            filtered = filtered.filter(item => item.cocoa_quality === filters.quality);
+            filtered = filtered.filter(item => item.quality === filters.quality);
         }
 
         // Filtre par fournisseur
