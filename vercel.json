@@ -5,7 +5,7 @@
   "public": true,
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!css|js|assets|.*\\.).*)",
       "destination": "/index.html"
     }
   ],
