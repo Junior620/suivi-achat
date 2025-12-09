@@ -18,6 +18,64 @@ async function loadDashboardPage(container) {
     
     container.innerHTML = `
         <div class="dashboard-container">
+            <!-- Filtres Avancés -->
+            <div class="filters-panel" id="filtersPanel">
+                <div class="filters-header">
+                    <h3>🔍 Filtres Avancés</h3>
+                    <div class="filters-actions">
+                        <span class="filter-count" id="filterCount">0 filtre(s) actif(s)</span>
+                        <button class="btn-reset-filters" id="resetFilters">Réinitialiser</button>
+                        <button class="btn-toggle-filters" id="toggleFilters">
+                            <span>▼</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="filters-content" id="filtersContent">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label>📅 Période</label>
+                            <div class="period-quick-buttons">
+                                <button class="btn-period active" data-period="30">30 jours</button>
+                                <button class="btn-period" data-period="90">90 jours</button>
+                                <button class="btn-period" data-period="365">1 an</button>
+                                <button class="btn-period" data-period="all">Tout</button>
+                            </div>
+                            <div class="custom-date-range">
+                                <input type="date" id="filterDateFrom" class="date-input" placeholder="Du">
+                                <span>à</span>
+                                <input type="date" id="filterDateTo" class="date-input" placeholder="Au">
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>👨‍🌾 Planteur</label>
+                            <input type="text" id="planterSearch" class="filter-search" placeholder="Rechercher un planteur...">
+                            <select id="filterPlanter" class="filter-select" multiple size="5">
+                                <option value="">Tous les planteurs</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>🗺️ Zone</label>
+                            <select id="filterZone" class="filter-select" multiple size="5">
+                                <option value="">Toutes les zones</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>⭐ Qualité</label>
+                            <select id="filterQuality" class="filter-select" multiple size="5">
+                                <option value="">Toutes les qualités</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filters-footer">
+                        <button class="btn-apply-filters" id="applyFilters">Appliquer les filtres</button>
+                        <button class="btn-export-filtered" id="exportFiltered">📥 Exporter les données filtrées</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- KPIs Section -->
             <div class="kpi-grid">
                 <div class="kpi-card">
@@ -101,6 +159,21 @@ async function loadDashboardPage(container) {
                 </div>
             </div>
 
+            <!-- Comparaisons Temporelles Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>📅 Comparaisons Temporelles</h3>
+                    <div class="comparison-controls">
+                        <button class="btn-comparison active" data-type="monthly">Mois par Mois</button>
+                        <button class="btn-comparison" data-type="yearly">Année sur Année</button>
+                        <button class="btn-comparison" data-type="custom">Personnalisé</button>
+                    </div>
+                </div>
+                <div id="comparisonContent">
+                    <!-- Contenu dynamique -->
+                </div>
+            </div>
+
             <!-- Top Planteurs Table -->
             <div class="card">
                 <div class="card-header">
@@ -116,6 +189,8 @@ async function loadDashboardPage(container) {
     
     await loadDashboardData();
     initDashboardCharts();
+    initTemporalComparisons();
+    initAdvancedFilters();
     
     // Nettoyer l'ancien intervalle s'il existe
     if (dashboardRefreshInterval) {
@@ -328,7 +403,13 @@ function initDashboardCharts() {
                     display: true,
                     labels: {
                         usePointStyle: true,
-                        padding: 15
+                        padding: 15,
+                        font: {
+                            size: 14,
+                            weight: 'bold',
+                            family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                        },
+                        color: '#333'
                     }
                 },
                 tooltip: {
@@ -384,9 +465,16 @@ function initDashboardCharts() {
                 legend: { 
                     position: 'bottom',
                     labels: {
-                        padding: 15,
+                        padding: 20,
                         usePointStyle: true,
-                        font: { size: 12 }
+                        font: { 
+                            size: 14,
+                            weight: 'bold',
+                            family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                        },
+                        color: '#333',
+                        boxWidth: 15,
+                        boxHeight: 15
                     }
                 },
                 tooltip: {
@@ -706,5 +794,847 @@ function updateTopPlantersTable() {
     const tableElement = document.getElementById('topPlantersTable');
     if (tableElement) {
         tableElement.innerHTML = html;
+    }
+}
+
+
+// ============================================
+// COMPARAISONS TEMPORELLES
+// ============================================
+
+let comparisonChart = null;
+let currentComparisonType = 'monthly';
+
+function initTemporalComparisons() {
+    // Gérer les boutons de comparaison
+    document.querySelectorAll('.btn-comparison').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.btn-comparison').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentComparisonType = e.target.dataset.type;
+            loadComparisonData();
+        });
+    });
+    
+    // Charger la comparaison par défaut
+    loadComparisonData();
+}
+
+async function loadComparisonData() {
+    const container = document.getElementById('comparisonContent');
+    
+    if (currentComparisonType === 'monthly') {
+        await loadMonthlyComparison(container);
+    } else if (currentComparisonType === 'yearly') {
+        await loadYearlyComparison(container);
+    } else if (currentComparisonType === 'custom') {
+        await loadCustomComparison(container);
+    }
+}
+
+async function loadMonthlyComparison(container) {
+    container.innerHTML = `
+        <div class="comparison-section">
+            <div class="comparison-header">
+                <h4>📊 Comparaison Mensuelle ${new Date().getFullYear()}</h4>
+                <select id="monthlyYear" class="period-selector">
+                    <option value="${new Date().getFullYear()}">${new Date().getFullYear()}</option>
+                    <option value="${new Date().getFullYear() - 1}">${new Date().getFullYear() - 1}</option>
+                    <option value="${new Date().getFullYear() - 2}">${new Date().getFullYear() - 2}</option>
+                </select>
+            </div>
+            <canvas id="monthlyComparisonChart"></canvas>
+            <div id="monthlyStats" class="comparison-stats"></div>
+        </div>
+    `;
+    
+    // Écouter le changement d'année
+    document.getElementById('monthlyYear').addEventListener('change', (e) => {
+        updateMonthlyComparison(parseInt(e.target.value));
+    });
+    
+    await updateMonthlyComparison(new Date().getFullYear());
+}
+
+async function updateMonthlyComparison(year) {
+    // Grouper les livraisons par mois
+    const monthlyData = Array(12).fill(0);
+    const monthlyDeliveries = Array(12).fill(0);
+    
+    dashboardData.deliveries.forEach(d => {
+        const date = new Date(d.date);
+        if (date.getFullYear() === year) {
+            const month = date.getMonth();
+            monthlyData[month] += d.quantity_kg;
+            monthlyDeliveries[month]++;
+        }
+    });
+    
+    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+    
+    // Créer ou mettre à jour le graphique
+    const ctx = document.getElementById('monthlyComparisonChart').getContext('2d');
+    
+    if (comparisonChart) {
+        comparisonChart.destroy();
+    }
+    
+    comparisonChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Volume (kg)',
+                data: monthlyData,
+                backgroundColor: months.map((_, i) => {
+                    const currentMonth = new Date().getMonth();
+                    return i === currentMonth ? '#E67E22' : '#2D5016';
+                }),
+                borderRadius: 8,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart'
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const volume = context.parsed.y;
+                            const deliveries = monthlyDeliveries[context.dataIndex];
+                            return [
+                                `Volume: ${volume.toLocaleString()} kg`,
+                                `Livraisons: ${deliveries}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+    
+    // Afficher les statistiques
+    const totalVolume = monthlyData.reduce((a, b) => a + b, 0);
+    const avgVolume = totalVolume / 12;
+    const maxMonth = monthlyData.indexOf(Math.max(...monthlyData));
+    const minMonth = monthlyData.indexOf(Math.min(...monthlyData.filter(v => v > 0)));
+    
+    document.getElementById('monthlyStats').innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Volume Total ${year}</div>
+                <div class="stat-value">${totalVolume.toLocaleString()} kg</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Moyenne Mensuelle</div>
+                <div class="stat-value">${avgVolume.toLocaleString(undefined, {maximumFractionDigits: 0})} kg</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Meilleur Mois</div>
+                <div class="stat-value">${months[maxMonth]} (${monthlyData[maxMonth].toLocaleString()} kg)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Mois le Plus Faible</div>
+                <div class="stat-value">${months[minMonth]} (${monthlyData[minMonth].toLocaleString()} kg)</div>
+            </div>
+        </div>
+    `;
+}
+
+async function loadYearlyComparison(container) {
+    container.innerHTML = `
+        <div class="comparison-section">
+            <div class="comparison-header">
+                <h4>📈 Comparaison Année sur Année</h4>
+                <div class="year-selector-group">
+                    <label>Comparer:</label>
+                    <select id="year1" class="period-selector">
+                        <option value="${new Date().getFullYear()}">${new Date().getFullYear()}</option>
+                        <option value="${new Date().getFullYear() - 1}">${new Date().getFullYear() - 1}</option>
+                        <option value="${new Date().getFullYear() - 2}">${new Date().getFullYear() - 2}</option>
+                    </select>
+                    <span>vs</span>
+                    <select id="year2" class="period-selector">
+                        <option value="${new Date().getFullYear()}">${new Date().getFullYear()}</option>
+                        <option value="${new Date().getFullYear() - 1}" selected>${new Date().getFullYear() - 1}</option>
+                        <option value="${new Date().getFullYear() - 2}">${new Date().getFullYear() - 2}</option>
+                    </select>
+                </div>
+            </div>
+            <canvas id="yearlyComparisonChart"></canvas>
+            <div id="yearlyStats" class="comparison-stats"></div>
+        </div>
+    `;
+    
+    // Écouter les changements
+    document.getElementById('year1').addEventListener('change', updateYearlyComparison);
+    document.getElementById('year2').addEventListener('change', updateYearlyComparison);
+    
+    await updateYearlyComparison();
+}
+
+async function updateYearlyComparison() {
+    const year1 = parseInt(document.getElementById('year1').value);
+    const year2 = parseInt(document.getElementById('year2').value);
+    
+    // Grouper par mois pour chaque année
+    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+    const year1Data = Array(12).fill(0);
+    const year2Data = Array(12).fill(0);
+    
+    dashboardData.deliveries.forEach(d => {
+        const date = new Date(d.date);
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        
+        if (year === year1) {
+            year1Data[month] += d.quantity_kg;
+        } else if (year === year2) {
+            year2Data[month] += d.quantity_kg;
+        }
+    });
+    
+    const ctx = document.getElementById('yearlyComparisonChart').getContext('2d');
+    
+    if (comparisonChart) {
+        comparisonChart.destroy();
+    }
+    
+    comparisonChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [
+                {
+                    label: year1.toString(),
+                    data: year1Data,
+                    borderColor: '#2D5016',
+                    backgroundColor: 'rgba(45, 80, 22, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                },
+                {
+                    label: year2.toString(),
+                    data: year2Data,
+                    borderColor: '#E67E22',
+                    backgroundColor: 'rgba(230, 126, 34, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart'
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: { 
+                            size: 16,
+                            weight: 'bold',
+                            family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                        },
+                        color: '#333',
+                        boxWidth: 20,
+                        boxHeight: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+    
+    // Calculer les statistiques
+    const total1 = year1Data.reduce((a, b) => a + b, 0);
+    const total2 = year2Data.reduce((a, b) => a + b, 0);
+    const diff = total1 - total2;
+    const diffPercent = total2 > 0 ? ((diff / total2) * 100) : 0;
+    const isPositive = diff > 0;
+    
+    document.getElementById('yearlyStats').innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Total ${year1}</div>
+                <div class="stat-value">${total1.toLocaleString()} kg</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total ${year2}</div>
+                <div class="stat-value">${total2.toLocaleString()} kg</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Différence</div>
+                <div class="stat-value" style="color: ${isPositive ? '#27AE60' : '#C0392B'}">
+                    ${isPositive ? '↗' : '↘'} ${Math.abs(diff).toLocaleString()} kg
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Variation</div>
+                <div class="stat-value" style="color: ${isPositive ? '#27AE60' : '#C0392B'}">
+                    ${isPositive ? '+' : ''}${diffPercent.toFixed(1)}%
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function loadCustomComparison(container) {
+    const today = new Date().toISOString().split('T')[0];
+    const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    container.innerHTML = `
+        <div class="comparison-section">
+            <div class="comparison-header">
+                <h4>🎯 Comparaison Personnalisée</h4>
+            </div>
+            <div class="custom-period-selector">
+                <div class="period-group">
+                    <label>Période 1:</label>
+                    <input type="date" id="period1Start" class="date-input" value="${monthAgo}">
+                    <span>à</span>
+                    <input type="date" id="period1End" class="date-input" value="${today}">
+                </div>
+                <div class="period-group">
+                    <label>Période 2:</label>
+                    <input type="date" id="period2Start" class="date-input" value="${new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}">
+                    <span>à</span>
+                    <input type="date" id="period2End" class="date-input" value="${monthAgo}">
+                </div>
+                <button id="compareBtn" class="btn btn-primary">Comparer</button>
+            </div>
+            <div class="quick-compare-buttons">
+                <button class="btn-quick" data-type="month">Ce mois vs Mois dernier</button>
+                <button class="btn-quick" data-type="quarter">Ce trimestre vs Trimestre dernier</button>
+                <button class="btn-quick" data-type="year">Cette année vs Année dernière</button>
+            </div>
+            <canvas id="customComparisonChart"></canvas>
+            <div id="customStats" class="comparison-stats"></div>
+        </div>
+    `;
+    
+    // Boutons rapides
+    document.querySelectorAll('.btn-quick').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const type = e.target.dataset.type;
+            setQuickPeriod(type);
+        });
+    });
+    
+    // Bouton comparer
+    document.getElementById('compareBtn').addEventListener('click', updateCustomComparison);
+    
+    // Charger la comparaison par défaut
+    await updateCustomComparison();
+}
+
+function setQuickPeriod(type) {
+    const now = new Date();
+    let p1Start, p1End, p2Start, p2End;
+    
+    if (type === 'month') {
+        // Ce mois
+        p1Start = new Date(now.getFullYear(), now.getMonth(), 1);
+        p1End = now;
+        // Mois dernier
+        p2Start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        p2End = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else if (type === 'quarter') {
+        // Ce trimestre
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        p1Start = new Date(now.getFullYear(), currentQuarter * 3, 1);
+        p1End = now;
+        // Trimestre dernier
+        p2Start = new Date(now.getFullYear(), (currentQuarter - 1) * 3, 1);
+        p2End = new Date(now.getFullYear(), currentQuarter * 3, 0);
+    } else if (type === 'year') {
+        // Cette année
+        p1Start = new Date(now.getFullYear(), 0, 1);
+        p1End = now;
+        // Année dernière
+        p2Start = new Date(now.getFullYear() - 1, 0, 1);
+        p2End = new Date(now.getFullYear() - 1, 11, 31);
+    }
+    
+    document.getElementById('period1Start').value = p1Start.toISOString().split('T')[0];
+    document.getElementById('period1End').value = p1End.toISOString().split('T')[0];
+    document.getElementById('period2Start').value = p2Start.toISOString().split('T')[0];
+    document.getElementById('period2End').value = p2End.toISOString().split('T')[0];
+    
+    updateCustomComparison();
+}
+
+async function updateCustomComparison() {
+    const p1Start = new Date(document.getElementById('period1Start').value);
+    const p1End = new Date(document.getElementById('period1End').value);
+    const p2Start = new Date(document.getElementById('period2Start').value);
+    const p2End = new Date(document.getElementById('period2End').value);
+    
+    // Filtrer les livraisons
+    const period1Deliveries = dashboardData.deliveries.filter(d => {
+        const date = new Date(d.date);
+        return date >= p1Start && date <= p1End;
+    });
+    
+    const period2Deliveries = dashboardData.deliveries.filter(d => {
+        const date = new Date(d.date);
+        return date >= p2Start && date <= p2End;
+    });
+    
+    // Calculer les totaux
+    const p1Volume = period1Deliveries.reduce((sum, d) => sum + d.quantity_kg, 0);
+    const p2Volume = period2Deliveries.reduce((sum, d) => sum + d.quantity_kg, 0);
+    const p1Count = period1Deliveries.length;
+    const p2Count = period2Deliveries.length;
+    
+    const ctx = document.getElementById('customComparisonChart').getContext('2d');
+    
+    if (comparisonChart) {
+        comparisonChart.destroy();
+    }
+    
+    comparisonChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Volume (kg)', 'Nombre de Livraisons'],
+            datasets: [
+                {
+                    label: 'Période 1',
+                    data: [p1Volume, p1Count],
+                    backgroundColor: '#2D5016',
+                    borderRadius: 8
+                },
+                {
+                    label: 'Période 2',
+                    data: [p2Volume, p2Count],
+                    backgroundColor: '#E67E22',
+                    borderRadius: 8
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart'
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 16,
+                            weight: 'bold',
+                            family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                        },
+                        color: '#333',
+                        padding: 20,
+                        boxWidth: 20,
+                        boxHeight: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                }
+            }
+        }
+    });
+    
+    // Statistiques
+    const volumeDiff = p1Volume - p2Volume;
+    const volumePercent = p2Volume > 0 ? ((volumeDiff / p2Volume) * 100) : 0;
+    const countDiff = p1Count - p2Count;
+    const countPercent = p2Count > 0 ? ((countDiff / p2Count) * 100) : 0;
+    
+    document.getElementById('customStats').innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Période 1 - Volume</div>
+                <div class="stat-value">${p1Volume.toLocaleString()} kg</div>
+                <div class="stat-change" style="color: ${volumeDiff >= 0 ? '#27AE60' : '#C0392B'}">
+                    ${volumeDiff >= 0 ? '↗' : '↘'} ${volumePercent.toFixed(1)}%
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Période 2 - Volume</div>
+                <div class="stat-value">${p2Volume.toLocaleString()} kg</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Période 1 - Livraisons</div>
+                <div class="stat-value">${p1Count}</div>
+                <div class="stat-change" style="color: ${countDiff >= 0 ? '#27AE60' : '#C0392B'}">
+                    ${countDiff >= 0 ? '↗' : '↘'} ${countPercent.toFixed(1)}%
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Période 2 - Livraisons</div>
+                <div class="stat-value">${p2Count}</div>
+            </div>
+        </div>
+    `;
+}
+
+
+// ============================================
+// FILTRES AVANCÉS
+// ============================================
+
+let activeFilters = {
+    period: 30,
+    dateFrom: null,
+    dateTo: null,
+    planters: [],
+    zones: [],
+    qualities: []
+};
+
+let allDeliveries = [];
+let filteredDeliveries = [];
+
+function initAdvancedFilters() {
+    // Stocker toutes les livraisons
+    allDeliveries = [...dashboardData.deliveries];
+    
+    // Peupler les filtres
+    populateFilterOptions();
+    
+    // Toggle filters panel
+    document.getElementById('toggleFilters').addEventListener('click', toggleFiltersPanel);
+    
+    // Boutons de période rapide
+    document.querySelectorAll('.btn-period').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.btn-period').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            activeFilters.period = e.target.dataset.period;
+            
+            // Réinitialiser les dates personnalisées
+            document.getElementById('filterDateFrom').value = '';
+            document.getElementById('filterDateTo').value = '';
+            activeFilters.dateFrom = null;
+            activeFilters.dateTo = null;
+        });
+    });
+    
+    // Dates personnalisées
+    document.getElementById('filterDateFrom').addEventListener('change', (e) => {
+        activeFilters.dateFrom = e.target.value;
+        activeFilters.period = 'custom';
+        document.querySelectorAll('.btn-period').forEach(b => b.classList.remove('active'));
+    });
+    
+    document.getElementById('filterDateTo').addEventListener('change', (e) => {
+        activeFilters.dateTo = e.target.value;
+        activeFilters.period = 'custom';
+        document.querySelectorAll('.btn-period').forEach(b => b.classList.remove('active'));
+    });
+    
+    // Recherche de planteur
+    document.getElementById('planterSearch').addEventListener('input', (e) => {
+        filterPlanterOptions(e.target.value);
+    });
+    
+    // Appliquer les filtres
+    document.getElementById('applyFilters').addEventListener('click', applyFilters);
+    
+    // Réinitialiser les filtres
+    document.getElementById('resetFilters').addEventListener('click', resetFilters);
+    
+    // Export filtré
+    document.getElementById('exportFiltered').addEventListener('click', exportFilteredData);
+    
+    // Appliquer les filtres par défaut
+    applyFilters();
+}
+
+function populateFilterOptions() {
+    // Planteurs
+    const planterSelect = document.getElementById('filterPlanter');
+    const planters = [...new Set(allDeliveries.map(d => d.planter_id))];
+    const planterMap = {};
+    dashboardData.planters.forEach(p => planterMap[p.id] = p.name);
+    
+    planters.forEach(planterId => {
+        const option = document.createElement('option');
+        option.value = planterId;
+        option.textContent = planterMap[planterId] || `Planteur ${planterId}`;
+        planterSelect.appendChild(option);
+    });
+    
+    // Zones
+    const zoneSelect = document.getElementById('filterZone');
+    const zones = [...new Set(allDeliveries.map(d => d.load_location))].filter(z => z);
+    zones.sort();
+    
+    zones.forEach(zone => {
+        const option = document.createElement('option');
+        option.value = zone;
+        option.textContent = zone;
+        zoneSelect.appendChild(option);
+    });
+    
+    // Qualités
+    const qualitySelect = document.getElementById('filterQuality');
+    const qualities = [...new Set(allDeliveries.map(d => d.quality))].filter(q => q);
+    qualities.sort();
+    
+    qualities.forEach(quality => {
+        const option = document.createElement('option');
+        option.value = quality;
+        option.textContent = quality;
+        qualitySelect.appendChild(option);
+    });
+}
+
+function filterPlanterOptions(searchTerm) {
+    const planterSelect = document.getElementById('filterPlanter');
+    const options = planterSelect.querySelectorAll('option');
+    
+    options.forEach(option => {
+        if (option.value === '') return;
+        const text = option.textContent.toLowerCase();
+        const matches = text.includes(searchTerm.toLowerCase());
+        option.style.display = matches ? '' : 'none';
+    });
+}
+
+function toggleFiltersPanel() {
+    const content = document.getElementById('filtersContent');
+    const button = document.getElementById('toggleFilters');
+    const isVisible = content.style.display !== 'none';
+    
+    content.style.display = isVisible ? 'none' : 'block';
+    button.querySelector('span').textContent = isVisible ? '▶' : '▼';
+}
+
+function applyFilters() {
+    // Récupérer les valeurs des filtres
+    const planterSelect = document.getElementById('filterPlanter');
+    const zoneSelect = document.getElementById('filterZone');
+    const qualitySelect = document.getElementById('filterQuality');
+    
+    activeFilters.planters = Array.from(planterSelect.selectedOptions)
+        .map(opt => opt.value)
+        .filter(v => v !== '');
+    
+    activeFilters.zones = Array.from(zoneSelect.selectedOptions)
+        .map(opt => opt.value)
+        .filter(v => v !== '');
+    
+    activeFilters.qualities = Array.from(qualitySelect.selectedOptions)
+        .map(opt => opt.value)
+        .filter(v => v !== '');
+    
+    // Filtrer les livraisons
+    filteredDeliveries = allDeliveries.filter(delivery => {
+        // Filtre par période
+        const deliveryDate = new Date(delivery.date);
+        
+        if (activeFilters.period === 'custom') {
+            if (activeFilters.dateFrom) {
+                const fromDate = new Date(activeFilters.dateFrom);
+                if (deliveryDate < fromDate) return false;
+            }
+            if (activeFilters.dateTo) {
+                const toDate = new Date(activeFilters.dateTo);
+                if (deliveryDate > toDate) return false;
+            }
+        } else if (activeFilters.period !== 'all') {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - parseInt(activeFilters.period));
+            if (deliveryDate < cutoffDate) return false;
+        }
+        
+        // Filtre par planteur
+        if (activeFilters.planters.length > 0) {
+            if (!activeFilters.planters.includes(delivery.planter_id)) return false;
+        }
+        
+        // Filtre par zone
+        if (activeFilters.zones.length > 0) {
+            if (!activeFilters.zones.includes(delivery.load_location)) return false;
+        }
+        
+        // Filtre par qualité
+        if (activeFilters.qualities.length > 0) {
+            if (!activeFilters.qualities.includes(delivery.quality)) return false;
+        }
+        
+        return true;
+    });
+    
+    // Mettre à jour dashboardData avec les données filtrées
+    dashboardData.deliveries = filteredDeliveries;
+    
+    // Recalculer les KPIs et mettre à jour les graphiques
+    const totalVolume = filteredDeliveries.reduce((sum, d) => sum + d.quantity_kg, 0);
+    const totalLivraisons = filteredDeliveries.length;
+    const moyenneParLivraison = totalLivraisons > 0 ? totalVolume / totalLivraisons : 0;
+    
+    dashboardData.totalVolume = totalVolume;
+    dashboardData.totalLivraisons = totalLivraisons;
+    dashboardData.moyenneParLivraison = moyenneParLivraison;
+    dashboardData.activePlanters = new Set(filteredDeliveries.map(d => d.planter_id)).size;
+    
+    // Mettre à jour l'affichage
+    updateKPIs();
+    updateDashboardCharts();
+    
+    // Mettre à jour le compteur de filtres
+    updateFilterCount();
+    
+    // Afficher une notification
+    showToast(`${filteredDeliveries.length} livraison(s) trouvée(s)`, 'success');
+}
+
+function resetFilters() {
+    // Réinitialiser les valeurs
+    activeFilters = {
+        period: 30,
+        dateFrom: null,
+        dateTo: null,
+        planters: [],
+        zones: [],
+        qualities: []
+    };
+    
+    // Réinitialiser l'interface
+    document.querySelectorAll('.btn-period').forEach(b => b.classList.remove('active'));
+    document.querySelector('.btn-period[data-period="30"]').classList.add('active');
+    
+    document.getElementById('filterDateFrom').value = '';
+    document.getElementById('filterDateTo').value = '';
+    document.getElementById('planterSearch').value = '';
+    
+    document.getElementById('filterPlanter').selectedIndex = -1;
+    document.getElementById('filterZone').selectedIndex = -1;
+    document.getElementById('filterQuality').selectedIndex = -1;
+    
+    // Réafficher toutes les options de planteurs
+    document.querySelectorAll('#filterPlanter option').forEach(opt => {
+        opt.style.display = '';
+    });
+    
+    // Restaurer toutes les données
+    dashboardData.deliveries = [...allDeliveries];
+    
+    // Réappliquer
+    applyFilters();
+    
+    showToast('Filtres réinitialisés', 'info');
+}
+
+function updateFilterCount() {
+    let count = 0;
+    
+    if (activeFilters.period === 'custom' && (activeFilters.dateFrom || activeFilters.dateTo)) {
+        count++;
+    }
+    if (activeFilters.planters.length > 0) count++;
+    if (activeFilters.zones.length > 0) count++;
+    if (activeFilters.qualities.length > 0) count++;
+    
+    const countElement = document.getElementById('filterCount');
+    countElement.textContent = `${count} filtre(s) actif(s)`;
+    countElement.style.color = count > 0 ? '#E67E22' : '#666';
+    countElement.style.fontWeight = count > 0 ? 'bold' : 'normal';
+}
+
+async function exportFilteredData() {
+    if (filteredDeliveries.length === 0) {
+        showToast('Aucune donnée à exporter', 'warning');
+        return;
+    }
+    
+    try {
+        // Créer un CSV
+        const headers = ['Date', 'Planteur', 'Zone', 'Qualité', 'Volume (kg)', 'Véhicule'];
+        const planterMap = {};
+        dashboardData.planters.forEach(p => planterMap[p.id] = p.name);
+        
+        const rows = filteredDeliveries.map(d => [
+            d.date,
+            planterMap[d.planter_id] || d.planter_id,
+            d.load_location,
+            d.quality,
+            d.quantity_kg,
+            d.vehicle || 'N/A'
+        ]);
+        
+        let csv = headers.join(',') + '\n';
+        rows.forEach(row => {
+            csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+        });
+        
+        // Télécharger
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `livraisons_filtrees_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast('Export réussi', 'success');
+    } catch (error) {
+        console.error('Erreur export:', error);
+        showToast('Erreur lors de l\'export', 'error');
     }
 }
