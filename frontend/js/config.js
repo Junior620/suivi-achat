@@ -32,9 +32,8 @@ const AppConfig = {
             
             case 'production':
             default:
-                // Utiliser la variable d'environnement Vercel si disponible
-                // Sinon utiliser l'URL par défaut (à mettre à jour après déploiement Azure)
-                return window.ENV_API_URL || 'https://cocoatrack-api-prod.azurewebsites.net/api/v1';
+                // URL de production Azure
+                return 'https://cocoatrack-api-prod.azurewebsites.net/api/v1';
         }
     },
     
