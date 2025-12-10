@@ -292,13 +292,24 @@ class MessagingApp {
     
     async loadUsers() {
         try {
-            const response = await api.get('/users');
+            // Essayer d'abord l'endpoint de recherche (accessible à tous)
+            const response = await api.get('/users/search');
             this.users = response || [];
         } catch (error) {
-            console.warn('⚠️ Impossible de charger les utilisateurs (permissions insuffisantes?):', error);
+            console.warn('⚠️ Impossible de charger les utilisateurs:', error);
             this.users = [];
             // Ne pas bloquer si on n'a pas accès aux utilisateurs
             // On les chargera depuis les conversations/canaux
+        }
+    }
+    
+    async searchUsers(query) {
+        try {
+            const response = await api.get(`/users/search?q=${encodeURIComponent(query)}`);
+            return response || [];
+        } catch (error) {
+            console.error('Erreur recherche utilisateurs:', error);
+            return [];
         }
     }
     
@@ -1454,12 +1465,53 @@ class MessagingApp {
     async showNewDMModal() {
         document.getElementById('newDMModal').classList.add('active');
         
-        // Charger la liste des utilisateurs
+        // Charger tous les utilisateurs au départ
+        await this.loadUsers();
+        
+        // Afficher la liste
+        this.renderUsersList(this.users);
+        
+        // Ajouter l'événement de recherche
+        const userSearch = document.getElementById('userSearch');
+        if (userSearch) {
+            // Supprimer les anciens événements
+            const newUserSearch = userSearch.cloneNode(true);
+            userSearch.parentNode.replaceChild(newUserSearch, userSearch);
+            
+            let searchTimeout;
+            newUserSearch.addEventListener('input', async (e) => {
+                const query = e.target.value.trim();
+                
+                // Debounce la recherche
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(async () => {
+                    if (query.length === 0) {
+                        // Afficher tous les utilisateurs
+                        this.renderUsersList(this.users);
+                    } else if (query.length >= 2) {
+                        // Rechercher sur le serveur
+                        const users = await this.searchUsers(query);
+                        this.renderUsersList(users);
+                    }
+                }, 300);
+            });
+        }
+    }
+    
+    renderUsersList(users) {
         const usersList = document.getElementById('usersList');
         const currentUserId = this.getCurrentUserId();
         
-        usersList.innerHTML = this.users
-            .filter(user => user.id !== currentUserId)
+        if (!usersList) return;
+        
+        const filteredUsers = users.filter(user => user.id !== currentUserId);
+        
+        if (filteredUsers.length === 0) {
+            usersList.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Aucun utilisateur trouvé</p>';
+            return;
+        }
+        
+        usersList.innerHTML = filteredUsers
             .map(user => {
                 const initials = user.email.substring(0, 2).toUpperCase();
                 return `
