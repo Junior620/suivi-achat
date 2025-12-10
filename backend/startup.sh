@@ -1,21 +1,14 @@
 #!/bin/bash
+set -e
 
-# Azure App Service startup script for FastAPI
+echo "Starting CocoaTrack API..."
+echo "Working directory: $(pwd)"
+echo "Contents:"
+ls -la
 
-echo "Starting CocoaTrack Backend..."
+# Set PYTHONPATH
+export PYTHONPATH=/home/site/wwwroot:$PYTHONPATH
+echo "PYTHONPATH: $PYTHONPATH"
 
-# Install dependencies if needed
-pip install -r requirements.txt
-
-# Run database migrations (if using Alembic)
-# alembic upgrade head
-
-# Start Gunicorn with Uvicorn workers
-gunicorn app.main:app \
-    --workers 4 \
-    --worker-class uvicorn.workers.UvicornWorker \
-    --bind 0.0.0.0:8000 \
-    --timeout 120 \
-    --access-logfile - \
-    --error-logfile - \
-    --log-level info
+# Start uvicorn
+exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000

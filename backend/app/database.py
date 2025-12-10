@@ -11,15 +11,16 @@ logger = logging.getLogger(__name__)
 os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
 os.environ.setdefault('PGCLIENTENCODING', 'utf8')
 
-# Configuration simple pour base de données locale
-logger.info(f"Connecting to database: {settings.DATABASE_URL[:50]}...")
+# Create engine with lazy connection
+logger.info(f"Configuring database engine...")
 engine = create_engine(
     settings.DATABASE_URL,
     pool_size=5,
     max_overflow=10,
     pool_pre_ping=True,
+    pool_recycle=3600,
     echo=False,
-    connect_args={"client_encoding": "utf8"}
+    connect_args={"client_encoding": "utf8", "connect_timeout": 30}
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

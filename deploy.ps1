@@ -7,11 +7,11 @@ param(
     [string]$Environment
 )
 
-Write-Host "🚀 Déploiement CocoaTrack - Environnement: $Environment" -ForegroundColor Green
+Write-Host "[DEPLOY] CocoaTrack - Environnement: $Environment" -ForegroundColor Green
 
 # Configuration
 $ResourceGroup = "cocoatrack-$Environment-rg"
-$Location = "westeurope"
+$Location = "francecentral"  # Changé de westeurope à francecentral
 $AppName = "cocoatrack-api-$Environment"
 $DbServer = "cocoatrack-db-$Environment"
 $DbName = "cocoatrack"
@@ -19,20 +19,20 @@ $DbUser = "cocoatrack"
 
 # Vérifier si Azure CLI est installé
 if (!(Get-Command az -ErrorAction SilentlyContinue)) {
-    Write-Host "❌ Azure CLI n'est pas installé. Installez-le avec: winget install Microsoft.AzureCLI" -ForegroundColor Red
+    Write-Host "[ERROR] Azure CLI n'est pas installe. Installez-le avec: winget install Microsoft.AzureCLI" -ForegroundColor Red
     exit 1
 }
 
 # Login Azure
-Write-Host "`n📝 Connexion à Azure..." -ForegroundColor Cyan
+Write-Host "`n[STEP 1] Connexion a Azure..." -ForegroundColor Cyan
 az login
 
 # Créer le groupe de ressources
-Write-Host "`n📦 Création du groupe de ressources..." -ForegroundColor Cyan
+Write-Host "`n[STEP 2] Creation du groupe de ressources..." -ForegroundColor Cyan
 az group create --name $ResourceGroup --location $Location
 
 # Créer l'App Service Plan
-Write-Host "`n🏗️ Création de l'App Service Plan..." -ForegroundColor Cyan
+Write-Host "`n[STEP 3] Creation de l'App Service Plan..." -ForegroundColor Cyan
 if ($Environment -eq "prod") {
     $Sku = "P1V2"
 } else {
@@ -46,7 +46,7 @@ az appservice plan create `
     --is-linux
 
 # Créer la Web App
-Write-Host "`n🌐 Création de la Web App..." -ForegroundColor Cyan
+Write-Host "`n[STEP 4] Creation de la Web App..." -ForegroundColor Cyan
 az webapp create `
     --name $AppName `
     --resource-group $ResourceGroup `
@@ -60,7 +60,7 @@ $DbPasswordPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
 )
 
 # Créer PostgreSQL
-Write-Host "`n🗄️ Création de PostgreSQL Flexible Server..." -ForegroundColor Cyan
+Write-Host "`n[STEP 5] Creation de PostgreSQL Flexible Server..." -ForegroundColor Cyan
 if ($Environment -eq "prod") {
     $DbSku = "Standard_D2s_v3"
     $DbTier = "GeneralPurpose"
@@ -82,14 +82,14 @@ az postgres flexible-server create `
     --public-access 0.0.0.0
 
 # Créer la base de données
-Write-Host "`n📊 Création de la base de données..." -ForegroundColor Cyan
+Write-Host "`n[STEP 6] Creation de la base de donnees..." -ForegroundColor Cyan
 az postgres flexible-server db create `
     --resource-group $ResourceGroup `
     --server-name $DbServer `
     --database-name $DbName
 
 # Configurer le firewall
-Write-Host "`n🔥 Configuration du firewall..." -ForegroundColor Cyan
+Write-Host "`n[STEP 7] Configuration du firewall..." -ForegroundColor Cyan
 az postgres flexible-server firewall-rule create `
     --resource-group $ResourceGroup `
     --name $DbServer `
@@ -111,7 +111,7 @@ $SecretKeyPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
 $FrontendUrl = Read-Host "Entrez l'URL du frontend Vercel (ex: https://cocoatrack.vercel.app)"
 
 # Configurer les variables d'environnement
-Write-Host "`n⚙️ Configuration des variables d'environnement..." -ForegroundColor Cyan
+Write-Host "`n[STEP 8] Configuration des variables d'environnement..." -ForegroundColor Cyan
 $DbUrl = "postgresql://${DbUser}:${DbPasswordPlain}@${DbServer}.postgres.database.azure.com:5432/${DbName}?sslmode=require"
 
 az webapp config appsettings set `
@@ -135,7 +135,7 @@ az webapp config set `
     --startup-file "startup.sh"
 
 # Créer le package de déploiement
-Write-Host "`n📦 Création du package de déploiement..." -ForegroundColor Cyan
+Write-Host "`n[STEP 9] Creation du package de deploiement..." -ForegroundColor Cyan
 Push-Location backend
 Compress-Archive -Path * -DestinationPath ../backend.zip -Force
 Pop-Location
@@ -156,10 +156,10 @@ $AppUrl = az webapp show `
     --resource-group $ResourceGroup `
     --query defaultHostName -o tsv
 
-Write-Host "`n✅ Déploiement terminé!" -ForegroundColor Green
-Write-Host "`n📍 URL de l'API: https://$AppUrl" -ForegroundColor Yellow
-Write-Host "`n📝 Prochaines étapes:" -ForegroundColor Cyan
-Write-Host "1. Déployez le frontend sur Vercel avec l'URL: https://$AppUrl/api/v1"
-Write-Host "2. Créez un utilisateur admin dans la base de données"
+Write-Host "`n[OK] Deploiement termine!" -ForegroundColor Green
+Write-Host "`n[INFO] URL de l'API: https://$AppUrl" -ForegroundColor Yellow
+Write-Host "`n[NEXT] Prochaines etapes:" -ForegroundColor Cyan
+Write-Host "1. Deployez le frontend sur Vercel avec l'URL: https://$AppUrl/api/v1"
+Write-Host "2. Creez un utilisateur admin dans la base de donnees"
 Write-Host "3. Testez l'API: https://$AppUrl/"
-Write-Host "`n💡 Pour voir les logs: az webapp log tail --name $AppName --resource-group $ResourceGroup"
+Write-Host "`n[TIP] Pour voir les logs: az webapp log tail --name $AppName --resource-group $ResourceGroup"
