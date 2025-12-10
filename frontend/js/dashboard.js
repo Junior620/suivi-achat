@@ -935,7 +935,8 @@ async function updateMonthlyComparison(year) {
     const totalVolume = monthlyData.reduce((a, b) => a + b, 0);
     const avgVolume = totalVolume / 12;
     const maxMonth = monthlyData.indexOf(Math.max(...monthlyData));
-    const minMonth = monthlyData.indexOf(Math.min(...monthlyData.filter(v => v > 0)));
+    const nonZeroData = monthlyData.filter(v => v > 0);
+    const minMonth = nonZeroData.length > 0 ? monthlyData.indexOf(Math.min(...nonZeroData)) : -1;
     
     document.getElementById('monthlyStats').innerHTML = `
         <div class="stats-grid">
@@ -949,11 +950,11 @@ async function updateMonthlyComparison(year) {
             </div>
             <div class="stat-item">
                 <div class="stat-label">Meilleur Mois</div>
-                <div class="stat-value">${months[maxMonth]} (${monthlyData[maxMonth].toLocaleString()} kg)</div>
+                <div class="stat-value">${maxMonth >= 0 ? `${months[maxMonth]} (${monthlyData[maxMonth].toLocaleString()} kg)` : 'N/A'}</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">Mois le Plus Faible</div>
-                <div class="stat-value">${months[minMonth]} (${monthlyData[minMonth].toLocaleString()} kg)</div>
+                <div class="stat-value">${minMonth >= 0 ? `${months[minMonth]} (${monthlyData[minMonth].toLocaleString()} kg)` : 'N/A'}</div>
             </div>
         </div>
     `;

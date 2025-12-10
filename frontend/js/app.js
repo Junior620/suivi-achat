@@ -240,7 +240,11 @@ function loadPage(page) {
             loadDocumentsPage(content);
             break;
         case 'notifications':
-            loadNotificationsPage(content);
+            if (typeof loadNotificationsPage === 'function') {
+                loadNotificationsPage(content);
+            } else {
+                content.innerHTML = '<div class="container"><h2>Notifications</h2><p>Fonctionnalité en cours de développement...</p></div>';
+            }
             break;
         case 'messaging':
             loadMessagingPage(content);
