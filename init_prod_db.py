@@ -8,6 +8,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'backend'))
 
 from app.database import engine, Base
 from app import models
+# Import tous les modèles pour que SQLAlchemy les connaisse
+from app.models import *
 from sqlalchemy.orm import Session
 from argon2 import PasswordHasher
 
