@@ -9,7 +9,7 @@ const getApiBaseUrl = () => {
     // Si on est sur Vercel (domaine .vercel.app) - utiliser HTTPS
     if (hostname.includes('vercel.app')) {
         console.log('📍 Mode: Production (Vercel)');
-        return 'https://cocoatrack-api-20251129203507.azurewebsites.net/api/v1';
+        return 'https://cocoatrack-api-prod.azurewebsites.net/api/v1';
     }
     
     // Si on est en local (localhost, 127.0.0.1, ou IP locale 192.168.x.x) - utiliser HTTP
@@ -28,7 +28,7 @@ const getApiBaseUrl = () => {
     
     // Par défaut, utiliser HTTPS
     console.log('📍 Mode: Production (défaut)');
-    return 'https://cocoatrack-api-20251129203507.azurewebsites.net/api/v1';
+    return 'https://cocoatrack-api-prod.azurewebsites.net/api/v1';
 };
 
 const API_BASE = getApiBaseUrl();

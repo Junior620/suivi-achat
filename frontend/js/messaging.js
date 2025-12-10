@@ -132,11 +132,11 @@ class MessagingApp {
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             return 'ws://localhost:8000/ws/messaging';
         } else if (hostname.includes('vercel.app')) {
-            return 'wss://cocoatrack-api-20251129203507.azurewebsites.net/ws/messaging';
+            return 'wss://cocoatrack-api-prod.azurewebsites.net/ws/messaging';
         } else if (hostname.startsWith('192.168.') || hostname.startsWith('10.') || hostname.startsWith('172.')) {
             return `ws://${hostname}:8000/ws/messaging`;
         } else {
-            return 'wss://cocoatrack-api-20251129203507.azurewebsites.net/ws/messaging';
+            return 'wss://cocoatrack-api-prod.azurewebsites.net/ws/messaging';
         }
     }
     
