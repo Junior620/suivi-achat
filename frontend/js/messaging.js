@@ -278,6 +278,16 @@ class MessagingApp {
         }
     }
     
+    async loadPublicChannels() {
+        try {
+            const response = await api.get('/messaging/channels/public');
+            return response || [];
+        } catch (error) {
+            console.error('Erreur chargement canaux publics:', error);
+            return [];
+        }
+    }
+    
     async loadConversations() {
         try {
             const response = await api.get('/messaging/conversations');
@@ -321,7 +331,18 @@ class MessagingApp {
         }
         
         if (this.channels.length === 0) {
-            container.innerHTML = '<p style="padding: 10px; color: #999; font-size: 0.9rem;">Aucun canal</p>';
+            container.innerHTML = `
+                <p style="padding: 10px; color: #999; font-size: 0.9rem;">Aucun canal</p>
+                <button class="btn-secondary" id="browseChannelsBtn" style="margin: 10px; width: calc(100% - 20px);">
+                    <i class="fas fa-search"></i> Parcourir les canaux
+                </button>
+            `;
+            
+            // Ajouter l'événement pour le bouton parcourir
+            const browseBtn = document.getElementById('browseChannelsBtn');
+            if (browseBtn) {
+                browseBtn.addEventListener('click', () => this.showBrowseChannelsModal());
+            }
             return;
         }
         
@@ -1426,6 +1447,74 @@ class MessagingApp {
     
     showCreateChannelModal() {
         document.getElementById('createChannelModal').classList.add('active');
+    }
+    
+    async showBrowseChannelsModal() {
+        document.getElementById('browseChannelsModal').classList.add('active');
+        
+        // Charger les canaux publics
+        const publicChannels = await this.loadPublicChannels();
+        const container = document.getElementById('publicChannelsList');
+        
+        if (!container) return;
+        
+        if (publicChannels.length === 0) {
+            container.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Aucun canal public disponible</p>';
+            return;
+        }
+        
+        container.innerHTML = publicChannels.map(channel => {
+            const isMember = channel.is_member;
+            return `
+                <div class="channel-browse-item" data-channel-id="${channel.id}">
+                    <div class="channel-icon">
+                        <i class="fas fa-hashtag"></i>
+                    </div>
+                    <div class="channel-info">
+                        <div class="channel-name">${channel.display_name}</div>
+                        <div class="channel-description">${channel.description || 'Pas de description'}</div>
+                        <div class="channel-meta">
+                            <span><i class="fas fa-users"></i> ${channel.member_count} membre(s)</span>
+                        </div>
+                    </div>
+                    <div class="channel-actions">
+                        ${isMember 
+                            ? '<span class="badge-success"><i class="fas fa-check"></i> Membre</span>' 
+                            : `<button class="btn-primary btn-sm join-channel-btn" data-channel-id="${channel.id}">
+                                <i class="fas fa-plus"></i> Rejoindre
+                               </button>`
+                        }
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        // Ajouter les événements pour rejoindre les canaux
+        container.querySelectorAll('.join-channel-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const channelId = btn.dataset.channelId;
+                await this.joinChannel(channelId);
+            });
+        });
+    }
+    
+    async joinChannel(channelId) {
+        try {
+            await api.post(`/messaging/channels/${channelId}/join`);
+            showNotification('Canal rejoint avec succès', 'success');
+            
+            // Recharger les canaux
+            await this.loadChannels();
+            
+            // Fermer le modal et ouvrir le canal
+            closeModal('browseChannelsModal');
+            this.openChannel(channelId);
+            
+        } catch (error) {
+            console.error('Erreur rejoindre canal:', error);
+            showNotification(error.response?.data?.detail || 'Erreur lors de la tentative de rejoindre le canal', 'error');
+        }
     }
     
     async createChannel() {

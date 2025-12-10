@@ -131,6 +131,20 @@ function renderMessagingPage() {
                 </div>
             </div>
         </div>
+        
+        <div class="modal" id="browseChannelsModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Parcourir les canaux publics</h3>
+                    <button class="btn-icon" onclick="closeModal('browseChannelsModal')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="publicChannelsList" class="channels-browse-list"></div>
+                </div>
+            </div>
+        </div>
     `;
 }
 
