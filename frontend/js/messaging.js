@@ -549,6 +549,11 @@ class MessagingApp {
                             <button onclick="window.messagingApp.replyToMessage('${msg.id}')">
                                 <i class="fas fa-reply"></i> Répondre
                             </button>
+                            ${this.currentChannel ? `
+                                <button onclick="window.messagingApp.togglePinMessage('${msg.id}')">
+                                    <i class="fas fa-thumbtack"></i> ${msg.is_pinned ? 'Désépingler' : 'Épingler'}
+                                </button>
+                            ` : ''}
                             ${isOwn ? `
                                 <button onclick="window.messagingApp.editMessage('${msg.id}')">
                                     <i class="fas fa-edit"></i> Modifier
@@ -1846,3 +1851,182 @@ function showNotification(message, type = 'info') {
 
 // Variable globale pour l'instance
 let messagingApp;
+
+    
+    // ============================================
+    // ÉPINGLER DES MESSAGES
+    // ============================================
+    
+    async togglePinMessage(messageId) {
+        if (!this.currentChannel) {
+            showToast('Vous ne pouvez épingler que dans les canaux', 'warning');
+            return;
+        }
+        
+        const message = this.messages.find(m => m.id === messageId);
+        if (!message) return;
+        
+        try {
+            if (message.is_pinned) {
+                await api.delete(`/messaging/messages/${messageId}/pin`);
+                message.is_pinned = false;
+                showToast('📌 Message désépinglé', 'info');
+            } else {
+                await api.post(`/messaging/messages/${messageId}/pin`);
+                message.is_pinned = true;
+                showToast('📌 Message épinglé', 'success');
+            }
+            
+            this.renderMessages(false);
+            await this.loadPinnedMessages();
+        } catch (error) {
+            console.error('Erreur épinglage message:', error);
+            showToast(error.message, 'error');
+        }
+    }
+    
+    async loadPinnedMessages() {
+        if (!this.currentChannel) return;
+        
+        try {
+            const pinnedMessages = await api.get(`/messaging/channels/${this.currentChannel.id}/pinned`);
+            this.renderPinnedMessages(pinnedMessages);
+        } catch (error) {
+            console.error('Erreur chargement messages épinglés:', error);
+        }
+    }
+    
+    renderPinnedMessages(pinnedMessages) {
+        let container = document.getElementById('pinnedMessagesContainer');
+        
+        if (!container) {
+            const chatHeader = document.getElementById('chatHeader');
+            if (!chatHeader) return;
+            
+            container = document.createElement('div');
+            container.id = 'pinnedMessagesContainer';
+            container.style.cssText = `
+                background: #fff3cd;
+                border-bottom: 1px solid #ffc107;
+                padding: 8px 16px;
+                display: none;
+            `;
+            chatHeader.after(container);
+        }
+        
+        if (pinnedMessages.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+        
+        container.style.display = 'block';
+        container.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-thumbtack" style="color: #ffc107;"></i>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px;">
+                        ${pinnedMessages.length} message(s) épinglé(s)
+                    </div>
+                    ${pinnedMessages.slice(0, 3).map(pm => `
+                        <div style="font-size: 0.85rem; color: #666; cursor: pointer; padding: 2px 0;"
+                             onclick="document.getElementById('message-${pm.message.id}')?.scrollIntoView({behavior: 'smooth', block: 'center'})">
+                            <strong>${pm.message.sender?.email || 'Quelqu\'un'}:</strong> 
+                            ${pm.message.content.substring(0, 50)}${pm.message.content.length > 50 ? '...' : ''}
+                        </div>
+                    `).join('')}
+                    ${pinnedMessages.length > 3 ? `
+                        <div style="font-size: 0.85rem; color: #1976d2; cursor: pointer; margin-top: 4px;"
+                             onclick="window.messagingApp.showAllPinnedMessages()">
+                            Voir tous les messages épinglés (${pinnedMessages.length})
+                        </div>
+                    ` : ''}
+                </div>
+                <button onclick="this.parentElement.parentElement.style.display='none'" style="
+                    background: none;
+                    border: none;
+                    color: #666;
+                    cursor: pointer;
+                    font-size: 1.2rem;
+                    padding: 4px;
+                ">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+    }
+    
+    showAllPinnedMessages() {
+        // Créer une modale pour afficher tous les messages épinglés
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-thumbtack"></i> Messages épinglés</h3>
+                    <button class="btn-icon" onclick="this.closest('.modal').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="allPinnedMessagesList" style="max-height: 60vh; overflow-y: auto;">
+                    <p style="text-align: center; color: #999;">Chargement...</p>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Charger tous les messages épinglés
+        this.loadAllPinnedMessages();
+    }
+    
+    async loadAllPinnedMessages() {
+        if (!this.currentChannel) return;
+        
+        try {
+            const pinnedMessages = await api.get(`/messaging/channels/${this.currentChannel.id}/pinned`);
+            const container = document.getElementById('allPinnedMessagesList');
+            
+            if (!container) return;
+            
+            if (pinnedMessages.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">Aucun message épinglé</p>';
+                return;
+            }
+            
+            container.innerHTML = pinnedMessages.map(pm => {
+                const msg = pm.message;
+                const sender = msg.sender || {};
+                const time = new Date(msg.created_at).toLocaleString('fr-FR');
+                
+                return `
+                    <div style="
+                        padding: 16px;
+                        border-bottom: 1px solid #eee;
+                        cursor: pointer;
+                    " onclick="
+                        this.closest('.modal').remove();
+                        document.getElementById('message-${msg.id}')?.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    ">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="font-weight: 600; color: #1976d2;">${sender.email || 'Inconnu'}</span>
+                            <span style="font-size: 0.85rem; color: #999;">${time}</span>
+                        </div>
+                        <div style="color: #333;">${this.formatMessageContent(msg.content)}</div>
+                        <div style="margin-top: 8px;">
+                            <button class="btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;"
+                                    onclick="event.stopPropagation(); window.messagingApp.togglePinMessage('${msg.id}'); this.closest('.modal').remove();">
+                                <i class="fas fa-thumbtack"></i> Désépingler
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Erreur chargement messages épinglés:', error);
+            const container = document.getElementById('allPinnedMessagesList');
+            if (container) {
+                container.innerHTML = '<p style="text-align: center; color: #f44336;">Erreur de chargement</p>';
+            }
+        }
+    }
+}
