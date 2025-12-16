@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from pydantic import BaseModel
 from ..database import get_db
-from ..models.push_subscription import PushSubscription
+from ..models import PushSubscription
 from ..routers.auth import get_current_user
 import logging
 
