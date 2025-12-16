@@ -9,13 +9,17 @@ from .routers import auth, users, planters, deliveries, analytics, exports, chef
 import logging
 import os
 
-# Configure logging - WARNING level pour réduire les logs
-logging.basicConfig(level=logging.WARNING)
+# Configure logging avec format détaillé
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 logger = logging.getLogger(__name__)
 
-# Réduire les logs d'uvicorn
+# Réduire les logs d'uvicorn access mais garder les erreurs
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
-logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
+logging.getLogger("uvicorn.error").setLevel(logging.INFO)
 
 app = FastAPI(
     title="Cocoa Delivery Management API",
@@ -31,6 +35,11 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Application shutting down...")
+
+# Middleware de gestion des erreurs (doit être en premier)
+from .middleware.error_handler import ErrorHandlerMiddleware, RequestLoggingMiddleware
+app.add_middleware(ErrorHandlerMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 
 # Middleware d'audit automatique
 from .middleware.audit_middleware import AuditMiddleware

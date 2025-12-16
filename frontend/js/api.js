@@ -75,76 +75,173 @@ class API {
     }
 
     async request(endpoint, options = {}) {
-        const url = `${this.baseUrl}${endpoint}`;
-        const config = {
-            ...options,
-            headers: this.getHeaders()
-        };
+        const maxRetries = options.retries !== undefined ? options.retries : 3;
+        const retryDelay = options.retryDelay || 1000;
+        let lastError;
 
-        try {
-            const response = await fetch(url, config);
-            if (response.status === 401) {
-                // Si c'est la page de login, ne pas rediriger
-                if (!endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
-                    // Essayer de rafraîchir le token
-                    const refreshed = await this.refreshToken();
-                    if (refreshed) {
-                        // Réessayer la requête avec le nouveau token
-                        config.headers = this.getHeaders();
-                        const retryResponse = await fetch(url, config);
-                        if (retryResponse.ok) {
-                            if (retryResponse.headers.get('content-type')?.includes('application/json')) {
-                                return await retryResponse.json();
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                const url = `${this.baseUrl}${endpoint}`;
+                const config = {
+                    ...options,
+                    headers: this.getHeaders()
+                };
+
+                const response = await fetch(url, config);
+                
+                if (response.status === 401) {
+                    // Si c'est la page de login, ne pas rediriger
+                    if (!endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+                        // Essayer de rafraîchir le token
+                        const refreshed = await this.refreshToken();
+                        if (refreshed) {
+                            // Réessayer la requête avec le nouveau token
+                            config.headers = this.getHeaders();
+                            const retryResponse = await fetch(url, config);
+                            if (retryResponse.ok) {
+                                if (retryResponse.headers.get('content-type')?.includes('application/json')) {
+                                    return await retryResponse.json();
+                                }
+                                return retryResponse;
                             }
-                            return retryResponse;
+                        }
+                        
+                        // Si le refresh a échoué, déconnecter
+                        console.log('❌ Token expiré et refresh échoué, déconnexion...');
+                        if (typeof disconnectNotificationStream === 'function') {
+                            disconnectNotificationStream();
+                        }
+                        localStorage.clear();
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                }
+                
+                if (!response.ok) {
+                    const errorData = await this.parseErrorResponse(response);
+                    const error = new Error(errorData.message);
+                    error.status = response.status;
+                    error.details = errorData.details;
+                    throw error;
+                }
+                
+                if (response.headers.get('content-type')?.includes('application/json')) {
+                    return await response.json();
+                }
+                return response;
+                
+            } catch (error) {
+                lastError = error;
+                
+                // Ne pas retry pour certaines erreurs
+                if (error.status === 400 || error.status === 401 || error.status === 403 || error.status === 404) {
+                    throw this.formatError(error, endpoint);
+                }
+                
+                // Si c'est le dernier essai, throw l'erreur
+                if (attempt === maxRetries) {
+                    // Si offline et que c'est une requête GET, essayer le cache
+                    if (!navigator.onLine && options.method !== 'POST' && options.method !== 'PUT' && options.method !== 'DELETE') {
+                        console.log('Mode offline : tentative de récupération depuis le cache');
+                        try {
+                            return await this.getFromCache(endpoint);
+                        } catch (cacheError) {
+                            throw this.formatError(error, endpoint);
                         }
                     }
-                    
-                    // Si le refresh a échoué, déconnecter
-                    console.log('❌ Token expiré et refresh échoué, déconnexion...');
-                    if (typeof disconnectNotificationStream === 'function') {
-                        disconnectNotificationStream();
-                    }
-                    localStorage.clear();
-                    window.location.href = 'index.html';
-                    return;
+                    throw this.formatError(error, endpoint);
                 }
+                
+                // Attendre avant de réessayer
+                console.warn(`⚠️ Tentative ${attempt + 1}/${maxRetries + 1} échouée, nouvelle tentative dans ${retryDelay}ms...`);
+                await this.sleep(retryDelay * (attempt + 1)); // Délai exponentiel
             }
-            if (!response.ok) {
-                let errorMessage = `Erreur ${response.status}`;
-                try {
-                    const error = await response.json();
-                    errorMessage = error.detail || error.message || JSON.stringify(error);
-                } catch (e) {
-                    errorMessage = await response.text() || errorMessage;
-                }
-                throw new Error(errorMessage);
-            }
-            if (response.headers.get('content-type')?.includes('application/json')) {
-                return await response.json();
-            }
-            return response;
-        } catch (error) {
-            // Améliorer l'affichage de l'erreur
-            let errorMessage = 'Erreur inconnue';
-            if (error instanceof Error) {
-                errorMessage = error.message;
-            } else if (typeof error === 'string') {
-                errorMessage = error;
-            } else if (error && typeof error === 'object') {
-                errorMessage = JSON.stringify(error);
-            }
-            console.error('API Error:', errorMessage);
-            console.error('Error details:', error);
-            
-            // Si offline et que c'est une requête GET, essayer le cache
-            if (!navigator.onLine && options.method !== 'POST' && options.method !== 'PUT' && options.method !== 'DELETE') {
-                console.log('Mode offline : tentative de récupération depuis le cache');
-                return this.getFromCache(endpoint);
-            }
-            
-            throw error;
         }
+        
+        throw this.formatError(lastError, endpoint);
+    }
+    
+    async parseErrorResponse(response) {
+        const status = response.status;
+        let message = '';
+        let details = null;
+        
+        try {
+            const error = await response.json();
+            details = error;
+            
+            // Messages personnalisés selon le code d'erreur
+            switch (status) {
+                case 400:
+                    message = error.detail || 'Données invalides. Veuillez vérifier les informations saisies.';
+                    break;
+                case 401:
+                    message = 'Session expirée. Veuillez vous reconnecter.';
+                    break;
+                case 403:
+                    message = 'Accès refusé. Vous n\'avez pas les permissions nécessaires.';
+                    break;
+                case 404:
+                    message = error.detail || 'Ressource non trouvée.';
+                    break;
+                case 409:
+                    message = error.detail || 'Conflit : cette ressource existe déjà.';
+                    break;
+                case 422:
+                    message = 'Erreur de validation : ' + (error.detail || 'données incorrectes');
+                    break;
+                case 500:
+                    message = 'Erreur serveur. Veuillez réessayer plus tard.';
+                    break;
+                case 502:
+                    message = 'Service temporairement indisponible. Veuillez réessayer.';
+                    break;
+                case 503:
+                    message = 'Service en maintenance. Veuillez réessayer dans quelques instants.';
+                    break;
+                default:
+                    message = error.detail || error.message || `Erreur ${status}`;
+            }
+        } catch (e) {
+            // Si la réponse n'est pas du JSON
+            const text = await response.text();
+            message = text || `Erreur ${status}`;
+        }
+        
+        return { message, details, status };
+    }
+    
+    formatError(error, endpoint) {
+        const formattedError = new Error();
+        
+        if (error.message) {
+            formattedError.message = error.message;
+        } else if (!navigator.onLine) {
+            formattedError.message = 'Pas de connexion internet. Veuillez vérifier votre connexion.';
+        } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            formattedError.message = 'Impossible de contacter le serveur. Veuillez réessayer.';
+        } else {
+            formattedError.message = 'Une erreur est survenue. Veuillez réessayer.';
+        }
+        
+        formattedError.status = error.status;
+        formattedError.details = error.details;
+        formattedError.endpoint = endpoint;
+        
+        // Logger l'erreur pour le debugging
+        console.error('❌ Erreur API:', {
+            endpoint,
+            message: formattedError.message,
+            status: error.status,
+            details: error.details,
+            originalError: error
+        });
+        
+        return formattedError;
+    }
+    
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
     
     async getFromCache(endpoint) {
