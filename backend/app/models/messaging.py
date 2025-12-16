@@ -80,6 +80,7 @@ class Message(Base):
     attachments = Column(JSONB)  # [{name, url, size, type, thumbnail}]
     mentions = Column(JSONB)  # [user_ids]
     entity_references = Column(JSONB)  # [{type: 'livraison', id: '123'}]
+    reply_to_id = Column(UUID(as_uuid=True), ForeignKey("messages.id"))  # Pour les réponses
     edited_at = Column(DateTime(timezone=True))
     deleted_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
@@ -90,6 +91,8 @@ class Message(Base):
     sender = relationship("User")
     reads = relationship("MessageRead", back_populates="message", cascade="all, delete-orphan")
     pinned = relationship("PinnedMessage", back_populates="message", cascade="all, delete-orphan")
+    reactions = relationship("MessageReaction", back_populates="message", cascade="all, delete-orphan")
+    reply_to = relationship("Message", remote_side=[id], foreign_keys=[reply_to_id])
 
     def __repr__(self):
         return f"<Message {self.id} by {self.sender_id}>"
@@ -129,6 +132,44 @@ class PinnedMessage(Base):
 
     def __repr__(self):
         return f"<PinnedMessage {self.message_id} in {self.channel_id}>"
+
+
+class MessageReaction(Base):
+    """Modèle pour les réactions emoji aux messages"""
+    __tablename__ = "message_reactions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    message_id = Column(UUID(as_uuid=True), ForeignKey("messages.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    emoji = Column(String(10), nullable=False)  # Emoji unicode
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relations
+    message = relationship("Message", back_populates="reactions")
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<MessageReaction {self.emoji} on {self.message_id} by {self.user_id}>"
+
+
+class PushSubscription(Base):
+    """Modèle pour les souscriptions push notifications"""
+    __tablename__ = "push_subscriptions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    endpoint = Column(Text, nullable=False, unique=True)
+    p256dh_key = Column(Text, nullable=False)
+    auth_key = Column(Text, nullable=False)
+    user_agent = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_used_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relations
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<PushSubscription for {self.user_id}>"
 
 
 class UserStatus(Base):

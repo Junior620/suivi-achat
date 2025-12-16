@@ -76,6 +76,30 @@ function renderMessagingPage() {
             </main>
         </div>
         
+        <!-- Boutons flottants -->
+        <div style="position: fixed; bottom: 80px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 100;">
+            <button class="btn-icon" onclick="window.messageSearch.showSearchModal()" title="Rechercher" style="
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                background: #1976d2;
+                color: white;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            ">
+                <i class="fas fa-search"></i>
+            </button>
+            <button class="btn-icon" onclick="window.pushNotifications.subscribe()" title="Activer notifications" style="
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                background: #4caf50;
+                color: white;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            ">
+                <i class="fas fa-bell"></i>
+            </button>
+        </div>
+        
         <div class="modal" id="createChannelModal">
             <div class="modal-content">
                 <div class="modal-header">

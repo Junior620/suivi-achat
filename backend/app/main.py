@@ -76,6 +76,8 @@ app.include_router(documents.router, prefix="/api/v1")
 app.include_router(audit.router, prefix="/api/v1")
 app.include_router(sessions.router, prefix="/api/v1")
 app.include_router(messaging.router, prefix="/api/v1")
+from .routers import messaging_features
+app.include_router(messaging_features.router, prefix="/api/v1")
 app.include_router(websocket.router)
 
 @app.get("/")
