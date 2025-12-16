@@ -510,6 +510,56 @@ async function loadChefPlanteursPage(container) {
         delete document.getElementById('chefForm').dataset.editId;
         await loadPlanteurs();
         await loadCooperativesList();
+        initChefPlanteurFormValidation();
+    }
+    
+    // Fonction pour initialiser la validation du formulaire fournisseur
+    function initChefPlanteurFormValidation() {
+        // Validation en temps réel pour le nom
+        Validation.addRealtimeValidation('name', [
+            {
+                validate: (value) => Validation.isRequired(value),
+                message: 'Le nom est obligatoire'
+            },
+            {
+                validate: (value) => Validation.minLength(value, 2),
+                message: 'Le nom doit contenir au moins 2 caractères'
+            }
+        ]);
+
+        // Validation en temps réel pour le téléphone
+        Validation.addRealtimeValidation('phone', [
+            {
+                validate: (value) => !value || Validation.isValidPhone(value),
+                message: 'Format de téléphone invalide (ex: 0712345678)'
+            }
+        ]);
+
+        // Validation pour la quantité maximale
+        Validation.addRealtimeValidation('quantite_max', [
+            {
+                validate: (value) => Validation.isRequired(value),
+                message: 'La quantité maximale est obligatoire'
+            },
+            {
+                validate: (value) => Validation.isValidQuantity(value),
+                message: 'La quantité doit être un nombre positif'
+            }
+        ]);
+
+        // Empêcher les valeurs négatives pour la quantité maximale
+        Validation.preventNegative('quantite_max');
+
+        // Empêcher les valeurs négatives pour les quantités de livraison
+        if (document.getElementById('quantityLoadedKg')) {
+            Validation.preventNegative('quantityLoadedKg');
+        }
+        if (document.getElementById('quantityKg')) {
+            Validation.preventNegative('quantityKg');
+        }
+
+        // Formater automatiquement le téléphone
+        Validation.formatPhone('phone');
     }
     
     async function loadCooperativesList() {
@@ -540,6 +590,9 @@ async function loadChefPlanteursPage(container) {
         
         // Charger les planteurs et sélectionner ceux déjà assignés
         await loadPlanteurs();
+        
+        // Initialiser la validation
+        initChefPlanteurFormValidation();
         
         // Sélectionner les planteurs déjà assignés à ce chef
         try {
@@ -602,6 +655,7 @@ async function loadChefPlanteursPage(container) {
     document.getElementById('addChefBtn').addEventListener('click', async () => {
         await openModal();
         await loadLocationsAutocomplete();
+        initChefPlanteurFormValidation();
     });
     
     // Gestion du filtre de statut
@@ -666,6 +720,41 @@ async function loadChefPlanteursPage(container) {
 
     document.getElementById('chefForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        // Valider le formulaire avant soumission
+        const validation = Validation.validateForm('chefForm', {
+            name: [
+                {
+                    validate: (value) => Validation.isRequired(value),
+                    message: 'Le nom est obligatoire'
+                },
+                {
+                    validate: (value) => Validation.minLength(value, 2),
+                    message: 'Le nom doit contenir au moins 2 caractères'
+                }
+            ],
+            phone: [
+                {
+                    validate: (value) => !value || Validation.isValidPhone(value),
+                    message: 'Format de téléphone invalide (ex: 0712345678)'
+                }
+            ],
+            quantite_max: [
+                {
+                    validate: (value) => Validation.isRequired(value),
+                    message: 'La quantité maximale est obligatoire'
+                },
+                {
+                    validate: (value) => Validation.isValidQuantity(value),
+                    message: 'La quantité doit être un nombre positif'
+                }
+            ]
+        });
+
+        if (!validation.isValid) {
+            showToast('Veuillez corriger les erreurs dans le formulaire', 'error');
+            return;
+        }
         
         const formData = {
             name: document.getElementById('name').value,
