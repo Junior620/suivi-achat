@@ -5,16 +5,13 @@ let dashboardData = {};
 let dashboardRefreshInterval = null;
 
 async function loadDashboardPage(container) {
-    // Afficher un loader pendant le chargement
+    // Afficher les skeleton loaders pendant le chargement
     container.innerHTML = `
-        <div class="dashboard-loading">
-            <div class="loading-spinner"></div>
-            <p>Chargement du dashboard...</p>
+        <div class="dashboard-container">
+            <div id="statsContainer">${window.SkeletonLoader ? SkeletonLoader.stats(4) : '<div class="loading-spinner"></div>'}</div>
+            <div id="chartsContainer">${window.SkeletonLoader ? SkeletonLoader.card(2) : ''}</div>
         </div>
     `;
-    
-    // Attendre un peu pour l'effet visuel
-    await new Promise(resolve => setTimeout(resolve, 300));
     
     container.innerHTML = `
         <div class="dashboard-container">
@@ -221,9 +218,12 @@ async function loadDashboardPage(container) {
 
 async function loadDashboardData(days = 30) {
     try {
-        // Charger les données
-        const deliveries = await api.getDeliveries({ size: 10000 });
-        const planters = await api.getPlanters({ size: 1000 });
+        // Utiliser le cache intelligent si disponible
+        const useCache = window.cachedApi ? cachedApi : api;
+        
+        // Charger les données avec cache
+        const deliveries = await (useCache.get ? useCache.get('/deliveries?size=10000') : api.getDeliveries({ size: 10000 }));
+        const planters = await (useCache.get ? useCache.get('/planters?size=1000') : api.getPlanters({ size: 1000 }));
         
         // Vérifier que les données sont valides
         const allDeliveries = Array.isArray(deliveries) ? deliveries : 

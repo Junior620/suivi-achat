@@ -1,4 +1,19 @@
 async function loadDeliveriesPage(container) {
+    // Afficher skeleton loader immédiatement
+    container.innerHTML = `
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">📦 Livraisons</h2>
+                <div class="actions">
+                    <button class="btn btn-success" disabled>📊 Export Excel</button>
+                    <button class="btn btn-danger" disabled>📄 Export PDF</button>
+                    <button class="btn btn-primary" disabled>+ Nouvelle livraison</button>
+                </div>
+            </div>
+            <div id="deliveriesTable">${window.SkeletonLoader ? SkeletonLoader.table(10, 6) : '<div class="loading-spinner"></div>'}</div>
+        </div>`;
+    
+    // Charger le contenu complet
     container.innerHTML = `
         <div class="card">
             <div class="card-header">

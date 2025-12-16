@@ -1,5 +1,17 @@
 async function loadPlantersPage(container) {
     console.log('=== CHARGEMENT PAGE PLANTEURS ===');
+    
+    // Afficher skeleton loader pendant le chargement
+    container.innerHTML = `
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">👨‍🌾 Planteurs</h2>
+                <button id="addPlanterBtn" class="btn btn-primary" disabled>+ Nouveau planteur</button>
+            </div>
+            <div id="plantersTable">${window.SkeletonLoader ? SkeletonLoader.table(8, 5) : '<div class="loading-spinner"></div>'}</div>
+        </div>`;
+    
+    // Charger le reste du HTML
     container.innerHTML = `
         <div class="card">
             <div class="card-header">
