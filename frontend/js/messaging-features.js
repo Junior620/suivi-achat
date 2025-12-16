@@ -397,7 +397,9 @@ window.messageSearch = new MessageSearch();
 class PushNotifications {
     constructor() {
         this.subscription = null;
-        this.publicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBroTwJJill56k3XPZiU'; // Clé VAPID publique
+        // Clé VAPID publique - À générer avec: npx web-push generate-vapid-keys
+        // Pour l'instant, désactiver les push notifications jusqu'à génération des clés
+        this.publicKey = null;
     }
     
     async requestPermission() {
@@ -420,6 +422,16 @@ class PushNotifications {
     
     async subscribe() {
         try {
+            if (!this.publicKey) {
+                showToast('⚠️ Notifications push non configurées. Utilisez les notifications navigateur à la place.', 'warning');
+                // Activer les notifications navigateur simples
+                const hasPermission = await this.requestPermission();
+                if (hasPermission) {
+                    showToast('✅ Notifications navigateur activées', 'success');
+                }
+                return;
+            }
+            
             const hasPermission = await this.requestPermission();
             if (!hasPermission) {
                 showToast('Permission de notification refusée', 'warning');
@@ -428,6 +440,7 @@ class PushNotifications {
             
             if (!('serviceWorker' in navigator)) {
                 console.warn('Service Worker non supporté');
+                showToast('⚠️ Service Worker non supporté par ce navigateur', 'warning');
                 return;
             }
             
@@ -453,10 +466,10 @@ class PushNotifications {
             
             await api.post('/messaging/push/subscribe', subscriptionData);
             
-            showToast('✅ Notifications activées', 'success');
+            showToast('✅ Notifications push activées', 'success');
         } catch (error) {
             console.error('Erreur souscription push:', error);
-            showToast('Erreur lors de l\'activation des notifications', 'error');
+            showToast('Erreur: ' + error.message, 'error');
         }
     }
     
@@ -508,14 +521,5 @@ window.pushNotifications = new PushNotifications();
 // INITIALISATION
 // ============================================
 
-// Demander la permission pour les notifications au chargement
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        // Demander après 5 secondes pour ne pas être intrusif
-        setTimeout(() => {
-            if (Notification.permission === 'default') {
-                window.pushNotifications.requestPermission();
-            }
-        }, 5000);
-    });
-}
+// Ne PAS demander automatiquement - doit être déclenché par un clic utilisateur
+// L'utilisateur cliquera sur le bouton cloche pour activer
