@@ -200,7 +200,37 @@ function attachEventListeners() {
             console.log('Opening payment modal');
             document.getElementById('paymentModal').classList.add('show');
             document.getElementById('datePaiement').valueAsDate = new Date();
+            
+            // INITIALISER LA VALIDATION
+            initPaymentFormValidation();
         };
+    }
+    
+    // Fonction pour initialiser la validation du formulaire paiement
+    function initPaymentFormValidation() {
+        // Empêcher les valeurs négatives pour le montant
+        if (document.getElementById('montant')) {
+            Validation.preventNegative('montant');
+        }
+
+        // Validation en temps réel pour le montant
+        Validation.addRealtimeValidation('montant', [
+            {
+                validate: (value) => Validation.isRequired(value),
+                message: 'Le montant est obligatoire'
+            },
+            {
+                validate: (value) => Validation.isValidPrice(value),
+                message: 'Le montant doit être un nombre positif'
+            },
+            {
+                validate: (value) => parseFloat(value) > 0,
+                message: 'Le montant doit être supérieur à 0'
+            }
+        ]);
+
+        // Formater automatiquement le montant
+        Validation.formatPrice('montant');
     }
     
     // Bouton voir soldes
@@ -255,6 +285,52 @@ function attachEventListeners() {
 }
 
 async function savePayment() {
+    // VALIDATION DU FORMULAIRE
+    const rules = {
+        'planterId': [
+            {
+                validate: (value) => Validation.isRequired(value),
+                message: 'Le planteur est obligatoire'
+            }
+        ],
+        'montant': [
+            {
+                validate: (value) => Validation.isRequired(value),
+                message: 'Le montant est obligatoire'
+            },
+            {
+                validate: (value) => Validation.isValidPrice(value),
+                message: 'Le montant doit être un nombre positif'
+            },
+            {
+                validate: (value) => parseFloat(value) > 0,
+                message: 'Le montant doit être supérieur à 0'
+            }
+        ],
+        'methode': [
+            {
+                validate: (value) => Validation.isRequired(value),
+                message: 'Le mode de paiement est obligatoire'
+            }
+        ],
+        'datePaiement': [
+            {
+                validate: (value) => Validation.isRequired(value),
+                message: 'La date de paiement est obligatoire'
+            },
+            {
+                validate: (value) => Validation.isValidDate(value, false),
+                message: 'La date ne peut pas être dans le futur'
+            }
+        ]
+    };
+
+    const validation = Validation.validateForm('paymentForm', rules);
+    if (!validation.isValid) {
+        showNotification('Veuillez corriger les erreurs dans le formulaire', 'error');
+        return;
+    }
+
     try {
         const data = {
             planter_id: document.getElementById('planterId').value,

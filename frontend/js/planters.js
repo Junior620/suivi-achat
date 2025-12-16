@@ -499,8 +499,50 @@ async function loadPlantersPage(container) {
         // Appliquer le mode "nouveau" (important pour les champs required)
         switchPlanterMode('new');
         
+        // INITIALISER LA VALIDATION
+        initPlanterFormValidation();
+        
         openModal();
     });
+    
+    // Fonction pour initialiser la validation du formulaire planteur
+    function initPlanterFormValidation() {
+        // Validation en temps réel pour le nom
+        Validation.addRealtimeValidation('name', [
+            {
+                validate: (value) => Validation.isRequired(value),
+                message: 'Le nom est obligatoire'
+            },
+            {
+                validate: (value) => Validation.minLength(value, 2),
+                message: 'Le nom doit contenir au moins 2 caractères'
+            }
+        ]);
+
+        // Validation en temps réel pour le téléphone
+        Validation.addRealtimeValidation('phone', [
+            {
+                validate: (value) => !value || Validation.isValidPhone(value),
+                message: 'Format de téléphone invalide (ex: 0712345678)'
+            }
+        ]);
+
+        // Empêcher les valeurs négatives pour la superficie
+        if (document.getElementById('superficie')) {
+            Validation.preventNegative('superficie');
+        }
+
+        // Empêcher les valeurs négatives pour les quantités
+        if (document.getElementById('quantityLoadedKg')) {
+            Validation.preventNegative('quantityLoadedKg');
+        }
+        if (document.getElementById('quantityKg')) {
+            Validation.preventNegative('quantityKg');
+        }
+
+        // Formater automatiquement le téléphone
+        Validation.formatPhone('phone');
+    }
     
     // Gérer le changement de mode
     function switchPlanterMode(mode) {
@@ -644,6 +686,42 @@ async function loadPlantersPage(container) {
     planterForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         console.log('=== SOUMISSION FORMULAIRE PLANTEUR ===');
+
+        // VALIDATION DU FORMULAIRE
+        const mode = document.querySelector('input[name="planterMode"]:checked').value;
+        
+        if (mode === 'new') {
+            const rules = {
+                'name': [
+                    {
+                        validate: (value) => Validation.isRequired(value),
+                        message: 'Le nom est obligatoire'
+                    },
+                    {
+                        validate: (value) => Validation.minLength(value, 2),
+                        message: 'Le nom doit contenir au moins 2 caractères'
+                    }
+                ],
+                'phone': [
+                    {
+                        validate: (value) => !value || Validation.isValidPhone(value),
+                        message: 'Format de téléphone invalide (ex: 0712345678)'
+                    }
+                ],
+                'superficie': [
+                    {
+                        validate: (value) => !value || Validation.isValidQuantity(value),
+                        message: 'La superficie doit être un nombre positif'
+                    }
+                ]
+            };
+
+            const validation = Validation.validateForm('planterForm', rules);
+            if (!validation.isValid) {
+                showNotification('Veuillez corriger les erreurs dans le formulaire', 'error');
+                return;
+            }
+        }
 
         try {
             const editId = document.getElementById('planterForm').dataset.editId;
