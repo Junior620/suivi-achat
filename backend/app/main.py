@@ -41,7 +41,15 @@ from .middleware.error_handler import ErrorHandlerMiddleware, RequestLoggingMidd
 app.add_middleware(ErrorHandlerMiddleware)
 app.add_middleware(RequestLoggingMiddleware)
 
-# Middleware d'audit automatique
+# Middleware de rate limiting (protection contre les abus)
+from .middleware.rate_limiter import RateLimitMiddleware
+app.add_middleware(RateLimitMiddleware)
+
+# Middleware de validation des entrées (sécurité)
+from .middleware.input_validator import InputValidationMiddleware
+app.add_middleware(InputValidationMiddleware)
+
+# Middleware d'audit automatique (logs détaillés)
 from .middleware.audit_middleware import AuditMiddleware
 app.add_middleware(AuditMiddleware)
 
