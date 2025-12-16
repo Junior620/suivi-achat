@@ -1,26 +1,49 @@
 {
-  "name": "CocoaTrack - Gestion Cacao",
+  "name": "CocoaTrack - Suivi Achat Cacao",
   "short_name": "CocoaTrack",
-  "description": "Application de gestion des livraisons de cacao",
+  "description": "Application de suivi des achats de cacao et gestion des planteurs",
   "start_url": "/app.html",
   "display": "standalone",
-  "background_color": "#4A7C59",
-  "theme_color": "#4A7C59",
+  "background_color": "#ffffff",
+  "theme_color": "#1976d2",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "assets/feve-de-cacao.png",
+      "src": "/assets/feve-de-cacao.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "assets/feve-de-cacao.png",
+      "src": "/assets/feve-de-cacao.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
   "categories": ["business", "productivity"],
-  "lang": "fr-FR"
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Planteurs",
+      "short_name": "Planteurs",
+      "description": "Gérer les planteurs",
+      "url": "/app.html#planters",
+      "icons": [{ "src": "/assets/feve-de-cacao.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Livraisons",
+      "short_name": "Livraisons",
+      "description": "Gérer les livraisons",
+      "url": "/app.html#deliveries",
+      "icons": [{ "src": "/assets/feve-de-cacao.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Messagerie",
+      "short_name": "Messages",
+      "description": "Messagerie interne",
+      "url": "/app.html#messaging",
+      "icons": [{ "src": "/assets/feve-de-cacao.png", "sizes": "192x192" }]
+    }
+  ]
 }

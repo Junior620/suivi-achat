@@ -1,15 +1,60 @@
 /**
- * Service Worker pour les notifications push
+ * Service Worker pour PWA et notifications push
  */
+
+const CACHE_NAME = 'cocoatrack-v1';
+const urlsToCache = [
+    '/app.html',
+    '/index.html',
+    '/css/style.css',
+    '/css/mobile.css',
+    '/js/app.js',
+    '/js/api.js',
+    '/js/config.js',
+    '/js/mobile.js',
+    '/assets/feve-de-cacao.png',
+    '/manifest.json'
+];
 
 self.addEventListener('install', (event) => {
     console.log('Service Worker installé');
-    self.skipWaiting();
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => cache.addAll(urlsToCache))
+            .then(() => self.skipWaiting())
+    );
 });
 
 self.addEventListener('activate', (event) => {
     console.log('Service Worker activé');
-    event.waitUntil(clients.claim());
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheName !== CACHE_NAME) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        }).then(() => clients.claim())
+    );
+});
+
+self.addEventListener('fetch', (event) => {
+    // Ne pas cacher les requêtes API
+    if (event.request.url.includes('/api/')) {
+        return;
+    }
+    
+    event.respondWith(
+        caches.match(event.request)
+            .then(response => {
+                if (response) {
+                    return response;
+                }
+                return fetch(event.request);
+            })
+    );
 });
 
 self.addEventListener('push', (event) => {
