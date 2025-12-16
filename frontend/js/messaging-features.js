@@ -422,9 +422,18 @@ class PushNotifications {
     
     async subscribe() {
         try {
+            // Pour l'instant, utiliser uniquement les notifications navigateur simples
+            // Les push notifications nécessitent une clé VAPID valide
+            const hasPermission = await this.requestPermission();
+            if (hasPermission) {
+                showToast('✅ Notifications activées', 'success');
+            } else {
+                showToast('Permission de notification refusée', 'warning');
+            }
+            return;
+            
+            // Code push notifications désactivé temporairement
             if (!this.publicKey) {
-                showToast('⚠️ Notifications push non configurées. Utilisez les notifications navigateur à la place.', 'warning');
-                // Activer les notifications navigateur simples
                 const hasPermission = await this.requestPermission();
                 if (hasPermission) {
                     showToast('✅ Notifications navigateur activées', 'success');
