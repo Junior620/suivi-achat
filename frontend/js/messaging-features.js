@@ -430,9 +430,10 @@ class PushNotifications {
             } else {
                 showToast('Permission de notification refusée', 'warning');
             }
-            return;
             
-            // Code push notifications désactivé temporairement
+            // Code push notifications désactivé temporairement car nécessite clé VAPID valide
+            // Tout le code ci-dessous est commenté pour éviter les erreurs
+            /*
             if (!this.publicKey) {
                 const hasPermission = await this.requestPermission();
                 if (hasPermission) {
@@ -466,8 +467,6 @@ class PushNotifications {
             this.subscription = subscription;
             
             // Envoyer la souscription au serveur
-            const subscriptionData = {
-                endpoint: subscription.endpoint,
                 p256dh_key: this.arrayBufferToBase64(subscription.getKey('p256dh')),
                 auth_key: this.arrayBufferToBase64(subscription.getKey('auth')),
                 user_agent: navigator.userAgent
@@ -476,6 +475,7 @@ class PushNotifications {
             await api.post('/messaging/push/subscribe', subscriptionData);
             
             showToast('✅ Notifications push activées', 'success');
+            */
         } catch (error) {
             console.error('Erreur souscription push:', error);
             showToast('Erreur: ' + error.message, 'error');
