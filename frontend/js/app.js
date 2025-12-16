@@ -124,14 +124,24 @@ async function init() {
 
     try {
         currentUser = await api.getMe();
+        
+        // Charger les permissions
+        if (typeof loadUserPermissions === 'function') {
+            await loadUserPermissions();
+        }
+        
+        // Afficher les infos utilisateur avec badge de rôle
+        const roleBadge = typeof createRoleBadge === 'function' 
+            ? createRoleBadge(currentUser.role) 
+            : currentUser.role;
+        
         document.getElementById('userInfo').innerHTML = `
             <div><strong>${currentUser.email}</strong></div>
-            <div style="font-size: 0.8rem; opacity: 0.8;">${currentUser.role}</div>
+            <div style="font-size: 0.8rem; margin-top: 4px;">${roleBadge}</div>
         `;
 
-        if (currentUser.role !== 'admin') {
-            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-        }
+        // Appliquer les permissions à la navigation
+        applyNavigationPermissions();
 
         // Rafraîchir le cache des données pour le mode offline
         if (window.offlineManager && navigator.onLine) {
@@ -258,6 +268,30 @@ function loadPage(page) {
 function loadMessagingPage(content) {
     content.innerHTML = renderMessagingPage();
     initMessaging();
+}
+
+// Appliquer les permissions à la navigation
+function applyNavigationPermissions() {
+    const role = window.userRole || currentUser?.role;
+    
+    // Admin-only : visible pour admin et superadmin
+    document.querySelectorAll('.admin-only').forEach(el => {
+        if (role !== 'admin' && role !== 'superadmin') {
+            el.style.display = 'none';
+        }
+    });
+    
+    // Superadmin-only
+    document.querySelectorAll('.superadmin-only').forEach(el => {
+        if (role !== 'superadmin') {
+            el.style.display = 'none';
+        }
+    });
+    
+    // Appliquer les permissions aux éléments avec data-permission
+    if (typeof applyPermissions === 'function') {
+        applyPermissions();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', init);

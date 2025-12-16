@@ -89,3 +89,65 @@ def refresh(refresh_data: RefreshRequest, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.get("/sessions")
+def get_my_sessions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Récupérer les sessions actives de l'utilisateur"""
+    sessions = db.query(SessionModel).filter(
+        SessionModel.user_id == str(current_user.id),
+        SessionModel.is_active == True
+    ).order_by(SessionModel.last_activity.desc()).all()
+    
+    return [{
+        "id": s.id,
+        "ip_address": s.ip_address,
+        "user_agent": s.user_agent,
+        "created_at": s.created_at.isoformat() if s.created_at else None,
+        "last_activity": s.last_activity.isoformat() if s.last_activity else None,
+        "is_current": False  # À améliorer avec le token actuel
+    } for s in sessions]
+
+
+@router.delete("/sessions/{session_id}")
+def revoke_session(
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Révoquer une session spécifique"""
+    session = db.query(SessionModel).filter(
+        SessionModel.id == session_id,
+        SessionModel.user_id == str(current_user.id)
+    ).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session non trouvée")
+    
+    session.is_active = False
+    db.commit()
+    
+    return {"message": "Session révoquée"}
+
+
+@router.post("/logout-all")
+def logout_all_sessions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Déconnecter toutes les sessions de l'utilisateur"""
+    sessions = db.query(SessionModel).filter(
+        SessionModel.user_id == str(current_user.id),
+        SessionModel.is_active == True
+    ).all()
+    
+    count = len(sessions)
+    for session in sessions:
+        session.is_active = False
+    
+    db.commit()
+    
+    return {"message": f"{count} session(s) déconnectée(s)"}
