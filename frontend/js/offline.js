@@ -53,17 +53,17 @@ function showInstallButton() {
 }
 
 async function installPWA() {
-    if (!deferredPrompt) return;
+    if (!window.pwaInstallPrompt) return;
     
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    window.pwaInstallPrompt.prompt();
+    const { outcome } = await window.pwaInstallPrompt.userChoice;
     
     if (outcome === 'accepted') {
         console.log('✅ PWA installée');
         showToast('Application installée avec succès !', 'success');
     }
     
-    deferredPrompt = null;
+    window.pwaInstallPrompt = null;
     const installBtn = document.getElementById('installBtn');
     if (installBtn) installBtn.style.display = 'none';
 }
