@@ -1,7 +1,7 @@
 // Gestion du mode offline et PWA
 
 let isOnline = navigator.onLine;
-let deferredPrompt = null;
+// Utiliser window.pwaInstallPrompt au lieu de deferredPrompt pour éviter les conflits
 const DB_NAME = 'CocoaTrackDB';
 const DB_VERSION = 2;
 
@@ -40,7 +40,7 @@ if ('serviceWorker' in navigator) {
 // Gérer l'installation de la PWA
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
-    deferredPrompt = e;
+    window.pwaInstallPrompt = e;
     showInstallButton();
 });
 

@@ -279,11 +279,14 @@ class PullToRefresh {
 // PWA INSTALLATION
 // ============================================
 
-let deferredPrompt;
+// Utiliser une variable globale unique pour éviter les conflits
+if (!window.pwaInstallPrompt) {
+    window.pwaInstallPrompt = null;
+}
 
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
-    deferredPrompt = e;
+    window.pwaInstallPrompt = e;
     
     // Afficher un bouton d'installation
     showInstallPrompt();
@@ -303,16 +306,16 @@ function showInstallPrompt() {
     `;
     
     installBtn.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
+        if (!window.pwaInstallPrompt) return;
         
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
+        window.pwaInstallPrompt.prompt();
+        const { outcome } = await window.pwaInstallPrompt.userChoice;
         
         if (outcome === 'accepted') {
             showToast('✅ Application installée', 'success');
         }
         
-        deferredPrompt = null;
+        window.pwaInstallPrompt = null;
         installBtn.remove();
     });
     
@@ -387,6 +390,21 @@ function addTouchFeedback() {
             element.classList.add('touch-feedback');
         }
     });
+}
+
+// Fonction helper pour vérifier si offlineManager est prêt
+function waitForOfflineManager(callback, maxAttempts = 10) {
+    let attempts = 0;
+    const checkInterval = setInterval(() => {
+        attempts++;
+        if (window.offlineManager) {
+            clearInterval(checkInterval);
+            callback();
+        } else if (attempts >= maxAttempts) {
+            clearInterval(checkInterval);
+            console.warn('⚠️ offlineManager non disponible après', maxAttempts, 'tentatives');
+        }
+    }, 500);
 }
 
 // ============================================
