@@ -440,11 +440,23 @@ function initMobile() {
     }
 }
 
-// Réinitialiser lors du redimensionnement
+// Réinitialiser uniquement si changement significatif (mobile <-> desktop)
+let lastWidth = window.innerWidth;
 let resizeTimeout;
+
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
-        location.reload();
+        const currentWidth = window.innerWidth;
+        const wasMobile = lastWidth <= 768;
+        const isMobile = currentWidth <= 768;
+        
+        // Recharger uniquement si on passe de mobile à desktop ou vice-versa
+        if (wasMobile !== isMobile) {
+            console.log('📱 Changement mobile/desktop détecté, rechargement...');
+            location.reload();
+        }
+        
+        lastWidth = currentWidth;
     }, 500);
 });
