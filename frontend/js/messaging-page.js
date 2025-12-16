@@ -183,15 +183,36 @@ function initMessaging() {
         }
     }
     
-    // Créer une nouvelle instance
-    setTimeout(() => {
+    // Fonction pour initialiser MessagingApp
+    const initApp = () => {
         if (typeof MessagingApp !== 'undefined') {
             window.messagingApp = new MessagingApp();
             console.log('✅ MessagingApp initialisée');
+            
+            // Initialiser les fonctionnalités supplémentaires si disponibles
+            if (typeof EmojiPicker !== 'undefined') {
+                window.emojiPicker = new EmojiPicker();
+            }
+            if (typeof MessageSearch !== 'undefined') {
+                window.messageSearch = new MessageSearch();
+            }
+            if (typeof PushNotifications !== 'undefined') {
+                window.pushNotifications = new PushNotifications();
+            }
         } else {
             console.error('❌ MessagingApp non disponible');
+            // Réessayer après un court délai
+            setTimeout(initApp, 200);
         }
-    }, 100);
+    };
+    
+    // Attendre que le DOM soit prêt
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+        // DOM déjà prêt, initialiser immédiatement
+        setTimeout(initApp, 100);
+    }
 }
 
 function closeModal(modalId) {
