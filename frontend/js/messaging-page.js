@@ -183,8 +183,14 @@ function initMessaging() {
         }
     }
     
+    let attempts = 0;
+    const maxAttempts = 10;
+    
     // Fonction pour initialiser MessagingApp
     const initApp = () => {
+        attempts++;
+        console.log(`Tentative ${attempts}/${maxAttempts} - MessagingApp disponible:`, typeof MessagingApp !== 'undefined');
+        
         if (typeof MessagingApp !== 'undefined') {
             window.messagingApp = new MessagingApp();
             console.log('✅ MessagingApp initialisée');
@@ -199,10 +205,18 @@ function initMessaging() {
             if (typeof PushNotifications !== 'undefined') {
                 window.pushNotifications = new PushNotifications();
             }
-        } else {
-            console.error('❌ MessagingApp non disponible');
-            // Réessayer après un court délai
+        } else if (attempts < maxAttempts) {
+            console.warn(`⏳ MessagingApp non disponible, nouvelle tentative dans 200ms...`);
             setTimeout(initApp, 200);
+        } else {
+            console.error('❌ MessagingApp non disponible après', maxAttempts, 'tentatives');
+            console.error('Scripts chargés:', {
+                MessagingApp: typeof MessagingApp,
+                EmojiPicker: typeof EmojiPicker,
+                MessageSearch: typeof MessageSearch,
+                PushNotifications: typeof PushNotifications
+            });
+            showToast('Erreur: Impossible de charger la messagerie', 'error');
         }
     };
     
