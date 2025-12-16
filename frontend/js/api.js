@@ -165,42 +165,59 @@ class API {
         const status = response.status;
         let message = '';
         let details = null;
+        let suggestion = null;
+        let requestId = null;
         
         try {
             const error = await response.json();
             details = error;
+            requestId = error.request_id;
+            suggestion = error.suggestion;
             
-            // Messages personnalisés selon le code d'erreur
-            switch (status) {
-                case 400:
-                    message = error.detail || 'Données invalides. Veuillez vérifier les informations saisies.';
-                    break;
-                case 401:
-                    message = 'Session expirée. Veuillez vous reconnecter.';
-                    break;
-                case 403:
-                    message = 'Accès refusé. Vous n\'avez pas les permissions nécessaires.';
-                    break;
-                case 404:
-                    message = error.detail || 'Ressource non trouvée.';
-                    break;
-                case 409:
-                    message = error.detail || 'Conflit : cette ressource existe déjà.';
-                    break;
-                case 422:
-                    message = 'Erreur de validation : ' + (error.detail || 'données incorrectes');
-                    break;
-                case 500:
-                    message = 'Erreur serveur. Veuillez réessayer plus tard.';
-                    break;
-                case 502:
-                    message = 'Service temporairement indisponible. Veuillez réessayer.';
-                    break;
-                case 503:
-                    message = 'Service en maintenance. Veuillez réessayer dans quelques instants.';
-                    break;
-                default:
-                    message = error.detail || error.message || `Erreur ${status}`;
+            // Utiliser le message du serveur en priorité
+            if (error.detail || error.message) {
+                message = error.detail || error.message;
+            } else {
+                // Messages par défaut selon le code d'erreur
+                switch (status) {
+                    case 400:
+                        message = 'Données invalides. Veuillez vérifier les informations saisies.';
+                        break;
+                    case 401:
+                        message = 'Session expirée. Veuillez vous reconnecter.';
+                        break;
+                    case 403:
+                        message = 'Accès refusé. Vous n\'avez pas les permissions nécessaires.';
+                        break;
+                    case 404:
+                        message = 'Ressource non trouvée.';
+                        break;
+                    case 409:
+                        message = 'Conflit : cette ressource existe déjà.';
+                        break;
+                    case 422:
+                        message = 'Erreur de validation des données.';
+                        break;
+                    case 500:
+                        message = 'Erreur serveur. Notre équipe a été notifiée.';
+                        break;
+                    case 502:
+                        message = 'Service temporairement indisponible. Veuillez réessayer.';
+                        break;
+                    case 503:
+                        message = 'Service en maintenance. Veuillez réessayer dans quelques instants.';
+                        break;
+                    case 504:
+                        message = 'Le serveur met trop de temps à répondre. Veuillez réessayer.';
+                        break;
+                    default:
+                        message = `Erreur ${status}`;
+                }
+            }
+            
+            // Ajouter la suggestion si disponible
+            if (suggestion) {
+                message += ` ${suggestion}`;
             }
         } catch (e) {
             // Si la réponse n'est pas du JSON
@@ -208,7 +225,7 @@ class API {
             message = text || `Erreur ${status}`;
         }
         
-        return { message, details, status };
+        return { message, details, status, suggestion, requestId };
     }
     
     formatError(error, endpoint) {
@@ -227,15 +244,32 @@ class API {
         formattedError.status = error.status;
         formattedError.details = error.details;
         formattedError.endpoint = endpoint;
+        formattedError.suggestion = error.suggestion;
+        formattedError.requestId = error.requestId;
         
-        // Logger l'erreur pour le debugging
-        console.error('❌ Erreur API:', {
+        // Logger l'erreur pour le debugging avec plus de contexte
+        const logData = {
+            timestamp: new Date().toISOString(),
             endpoint,
             message: formattedError.message,
             status: error.status,
+            requestId: error.requestId,
+            suggestion: error.suggestion,
             details: error.details,
-            originalError: error
-        });
+            userAgent: navigator.userAgent,
+            online: navigator.onLine,
+            url: window.location.href
+        };
+        
+        console.error('❌ Erreur API:', logData);
+        
+        // Envoyer à un service de monitoring si disponible
+        if (window.applicationInsights) {
+            window.applicationInsights.trackException({
+                exception: formattedError,
+                properties: logData
+            });
+        }
         
         return formattedError;
     }
