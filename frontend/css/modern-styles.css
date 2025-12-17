@@ -313,10 +313,18 @@ body {
     background: rgba(255,255,255,0.05);
     border-radius: var(--radius);
     font-size: 0.9rem;
+    overflow: hidden;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 #userInfo strong {
     color: var(--accent);
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
 }
 
 /* ============================================
