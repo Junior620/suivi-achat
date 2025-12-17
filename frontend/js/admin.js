@@ -799,8 +799,7 @@ async function loadAdminPage(container) {
         let filtered = allActiveSessions;
         if (search) {
             filtered = filtered.filter(s => 
-                s.user_email?.toLowerCase().includes(search) || 
-                s.user_name?.toLowerCase().includes(search)
+                s.user_email?.toLowerCase().includes(search)
             );
         }
         
@@ -837,7 +836,6 @@ async function loadAdminPage(container) {
                             <tr style="border-bottom: 1px solid #eee;">
                                 <td style="padding: 10px;">
                                     <strong>${s.user_email}</strong>
-                                    ${s.user_name ? `<br><small style="color: #666;">${s.user_name}</small>` : ''}
                                 </td>
                                 <td style="padding: 10px;">
                                     ${typeof createRoleBadge === 'function' ? createRoleBadge(s.user_role) : s.user_role}

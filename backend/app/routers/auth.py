@@ -152,3 +152,56 @@ def logout_all_sessions(
     
     return {"message": f"{count} session(s) déconnectée(s)"}
 
+
+@router.get("/admin/sessions")
+def get_all_sessions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Récupérer toutes les sessions actives (admin/superadmin uniquement)"""
+    if current_user.role not in ['admin', 'superadmin']:
+        raise HTTPException(status_code=403, detail="Permission denied")
+    
+    try:
+        # Jointure avec la table users pour récupérer email et nom
+        sessions = db.query(SessionModel, User).outerjoin(
+            User, SessionModel.user_id == User.id
+        ).filter(
+            SessionModel.is_active == True
+        ).order_by(SessionModel.last_activity.desc()).all()
+        
+        return [{
+            "id": s.id,
+            "user_id": str(s.user_id) if s.user_id else None,
+            "user_email": u.email if u else "Utilisateur supprimé",
+            "user_role": u.role if u else "unknown",
+            "ip_address": s.ip_address,
+            "user_agent": s.user_agent,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+            "last_activity": s.last_activity.isoformat() if s.last_activity else None
+        } for s, u in sessions]
+    except Exception as e:
+        print(f"Error fetching admin sessions: {e}")
+        raise HTTPException(status_code=500, detail=f"Erreur: {str(e)}")
+
+
+@router.delete("/admin/sessions/{session_id}")
+def admin_revoke_session(
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Révoquer une session (admin/superadmin uniquement)"""
+    if current_user.role not in ['admin', 'superadmin']:
+        raise HTTPException(status_code=403, detail="Permission denied")
+    
+    session = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session non trouvée")
+    
+    session.is_active = False
+    db.commit()
+    
+    return {"message": "Session révoquée"}
+
