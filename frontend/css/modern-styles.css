@@ -305,6 +305,7 @@ body {
     padding: 20px;
     border-top: 1px solid rgba(255,255,255,0.1);
     background: rgba(0,0,0,0.2);
+    overflow: hidden;
 }
 
 #userInfo {
@@ -314,8 +315,15 @@ body {
     border-radius: var(--radius);
     font-size: 0.9rem;
     overflow: hidden;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+#userInfo div {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
 }
 
 #userInfo strong {
