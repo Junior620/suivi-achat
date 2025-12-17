@@ -478,8 +478,11 @@ async function loadAdminPage(container) {
     
     async function loadAuditLogs() {
         try {
-            const logs = await api.get('/audit/logs?limit=100');
+            const response = await api.get('/audit/logs?limit=100');
             const content = document.getElementById('auditContent');
+            
+            // L'API retourne {total, skip, limit, logs: [...]}
+            const logs = response?.logs || response || [];
             
             if (!logs || !logs.length) {
                 content.innerHTML = '<p style="text-align: center; color: #666;">Aucun log d\'audit</p>';
@@ -488,6 +491,7 @@ async function loadAdminPage(container) {
             
             content.innerHTML = `
                 <div style="overflow-x: auto;">
+                    <p style="margin-bottom: 10px; color: #666;">Total: ${response?.total || logs.length} logs</p>
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr style="background: #f5f5f5;">
@@ -509,7 +513,7 @@ async function loadAdminPage(container) {
                                             ${log.action}
                                         </span>
                                     </td>
-                                    <td style="padding: 10px;">${log.resource_type || ''} ${log.resource_id || ''}</td>
+                                    <td style="padding: 10px;">${log.entity_type || ''} ${log.entity_id || ''}</td>
                                     <td style="padding: 10px; font-family: monospace; font-size: 0.85rem;">${log.ip_address || '-'}</td>
                                 </tr>
                             `).join('')}

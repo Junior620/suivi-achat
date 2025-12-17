@@ -31,6 +31,16 @@ app = FastAPI(
 async def startup_event():
     logger.info("Application starting up...")
     logger.info(f"Database pool size: 5, max overflow: 10")
+    
+    # Exécuter les migrations automatiques
+    try:
+        from .database import engine
+        from .migrations import run_startup_migrations
+        logger.info("Running startup migrations...")
+        run_startup_migrations(engine)
+        logger.info("Startup migrations completed")
+    except Exception as e:
+        logger.error(f"Error running migrations: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():

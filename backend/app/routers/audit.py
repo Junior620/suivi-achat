@@ -38,7 +38,7 @@ async def get_audit_logs(
     
     Permissions: admin, manager
     """
-    if current_user.role not in ["admin", "manager"]:
+    if current_user.role not in ["superadmin", "admin", "manager"]:
         raise HTTPException(status_code=403, detail="Permission denied")
     
     try:
@@ -119,7 +119,7 @@ async def get_audit_log(
     current_user: User = Depends(get_current_user)
 ):
     """Récupérer un log d'audit spécifique"""
-    if current_user.role not in ["admin", "manager"]:
+    if current_user.role not in ["superadmin", "admin", "manager"]:
         raise HTTPException(status_code=403, detail="Permission denied")
     
     log = db.query(AuditLog).filter(AuditLog.id == log_id).first()
@@ -149,7 +149,7 @@ async def get_audit_stats(
     current_user: User = Depends(get_current_user)
 ):
     """Obtenir les statistiques d'audit"""
-    if current_user.role not in ["admin", "manager"]:
+    if current_user.role not in ["superadmin", "admin", "manager"]:
         raise HTTPException(status_code=403, detail="Permission denied")
     
     try:
@@ -214,7 +214,7 @@ async def export_audit_csv(
     current_user: User = Depends(get_current_user)
 ):
     """Exporter les logs d'audit en CSV"""
-    if current_user.role != "admin":
+    if current_user.role not in ["superadmin", "admin"]:
         raise HTTPException(status_code=403, detail="Admin only")
     
     try:
@@ -289,7 +289,7 @@ async def get_entity_history(
     current_user: User = Depends(get_current_user)
 ):
     """Obtenir l'historique complet d'une entité"""
-    if current_user.role not in ["admin", "manager"]:
+    if current_user.role not in ["superadmin", "admin", "manager"]:
         raise HTTPException(status_code=403, detail="Permission denied")
     
     logs = db.query(AuditLog).filter(

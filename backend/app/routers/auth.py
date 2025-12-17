@@ -34,11 +34,11 @@ def login(login_data: LoginRequest, request: Request, db: Session = Depends(get_
         else:
             # Créer une nouvelle session
             session = SessionModel(
-                user_id=str(user.id),
-                session_token=tokens['access_token'][:50],  # Stocker une partie du token
+                user_id=user.id,  # UUID directement, pas de conversion string
+                session_token=tokens['access_token'][:50],
                 ip_address=request.client.host if request.client else None,
                 user_agent=request.headers.get('user-agent', 'Unknown'),
-                expires_at=datetime.utcnow() + timedelta(days=7),  # 7 jours (durée raisonnable)
+                expires_at=datetime.utcnow() + timedelta(days=7),
                 is_active=True,
                 last_activity=datetime.utcnow()
             )
@@ -98,7 +98,7 @@ def get_my_sessions(
 ):
     """Récupérer les sessions actives de l'utilisateur"""
     sessions = db.query(SessionModel).filter(
-        SessionModel.user_id == str(current_user.id),
+        SessionModel.user_id == current_user.id,
         SessionModel.is_active == True
     ).order_by(SessionModel.last_activity.desc()).all()
     
@@ -121,7 +121,7 @@ def revoke_session(
     """Révoquer une session spécifique"""
     session = db.query(SessionModel).filter(
         SessionModel.id == session_id,
-        SessionModel.user_id == str(current_user.id)
+        SessionModel.user_id == current_user.id
     ).first()
     
     if not session:
@@ -140,7 +140,7 @@ def logout_all_sessions(
 ):
     """Déconnecter toutes les sessions de l'utilisateur"""
     sessions = db.query(SessionModel).filter(
-        SessionModel.user_id == str(current_user.id),
+        SessionModel.user_id == current_user.id,
         SessionModel.is_active == True
     ).all()
     
@@ -151,3 +151,4 @@ def logout_all_sessions(
     db.commit()
     
     return {"message": f"{count} session(s) déconnectée(s)"}
+

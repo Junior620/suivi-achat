@@ -822,6 +822,7 @@ function initTemporalComparisons() {
 
 async function loadComparisonData() {
     const container = document.getElementById('comparisonContent');
+    if (!container) return;
     
     if (currentComparisonType === 'monthly') {
         await loadMonthlyComparison(container);
@@ -833,6 +834,7 @@ async function loadComparisonData() {
 }
 
 async function loadMonthlyComparison(container) {
+    if (!container) return;
     container.innerHTML = `
         <div class="comparison-section">
             <div class="comparison-header">
@@ -1349,13 +1351,16 @@ let filteredDeliveries = [];
 
 function initAdvancedFilters() {
     // Stocker toutes les livraisons
-    allDeliveries = [...dashboardData.deliveries];
+    allDeliveries = [...(dashboardData?.deliveries || [])];
     
     // Peupler les filtres
     populateFilterOptions();
     
     // Toggle filters panel
-    document.getElementById('toggleFilters').addEventListener('click', toggleFiltersPanel);
+    const toggleBtn = document.getElementById('toggleFilters');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleFiltersPanel);
+    }
     
     // Boutons de période rapide
     document.querySelectorAll('.btn-period').forEach(btn => {

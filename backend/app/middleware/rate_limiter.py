@@ -40,18 +40,18 @@ class RateLimiter:
         
         # Configuration des limites par type d'endpoint
         self.limits = {
-            # Auth endpoints - plus restrictifs
-            "auth": {"requests": 10, "window": 60, "block_duration": 300},
+            # Auth endpoints - plus permissif pour éviter les blocages
+            "auth": {"requests": 30, "window": 60, "block_duration": 60},
             # API lecture - modéré
-            "read": {"requests": 100, "window": 60, "block_duration": 60},
-            # API écriture - plus restrictif
-            "write": {"requests": 30, "window": 60, "block_duration": 120},
-            # Upload fichiers - très restrictif
-            "upload": {"requests": 10, "window": 60, "block_duration": 300},
+            "read": {"requests": 200, "window": 60, "block_duration": 30},
+            # API écriture - modéré
+            "write": {"requests": 60, "window": 60, "block_duration": 60},
+            # Upload fichiers - restrictif
+            "upload": {"requests": 20, "window": 60, "block_duration": 120},
             # WebSocket - permissif
-            "websocket": {"requests": 200, "window": 60, "block_duration": 30},
+            "websocket": {"requests": 300, "window": 60, "block_duration": 30},
             # Default
-            "default": {"requests": 60, "window": 60, "block_duration": 60}
+            "default": {"requests": 100, "window": 60, "block_duration": 30}
         }
     
     def _get_client_key(self, request: Request) -> str:
