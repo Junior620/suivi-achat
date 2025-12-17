@@ -460,38 +460,112 @@ async function loadAdminPage(container) {
     }
 
     
+    // Variables pour la pagination audit
+    let auditCurrentPage = 1;
+    const auditPageSize = 25;
+    let auditFilters = { action: '', search: '' };
+    
     function loadAuditTab() {
+        auditCurrentPage = 1;
         tabContent.innerHTML = `
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">📋 Journal d'Audit</h2>
                 </div>
+                
+                <!-- Filtres -->
+                <div style="padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                    <input type="text" id="auditSearch" placeholder="🔍 Rechercher..." 
+                        style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; min-width: 200px;">
+                    <select id="auditActionFilter" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="">Toutes les actions</option>
+                        <option value="CREATE">CREATE</option>
+                        <option value="UPDATE">UPDATE</option>
+                        <option value="DELETE">DELETE</option>
+                        <option value="LOGIN">LOGIN</option>
+                        <option value="LOGIN_SUCCESS">LOGIN_SUCCESS</option>
+                        <option value="LOGOUT">LOGOUT</option>
+                    </select>
+                    <select id="auditPageSize" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="25">25 par page</option>
+                        <option value="50">50 par page</option>
+                        <option value="100">100 par page</option>
+                    </select>
+                    <button id="auditRefreshBtn" class="btn btn-secondary" style="padding: 8px 16px;">🔄 Actualiser</button>
+                </div>
+                
                 <div id="auditContent" style="padding: 20px;">
                     <p>Chargement...</p>
+                </div>
+                
+                <!-- Pagination -->
+                <div id="auditPagination" style="padding: 15px; border-top: 1px solid #eee; display: flex; justify-content: center; align-items: center; gap: 10px;">
                 </div>
             </div>
         `;
         
-        // Charger les logs d'audit
+        // Event listeners
+        document.getElementById('auditSearch').addEventListener('input', debounce(() => {
+            auditFilters.search = document.getElementById('auditSearch').value;
+            auditCurrentPage = 1;
+            loadAuditLogs();
+        }, 500));
+        
+        document.getElementById('auditActionFilter').addEventListener('change', () => {
+            auditFilters.action = document.getElementById('auditActionFilter').value;
+            auditCurrentPage = 1;
+            loadAuditLogs();
+        });
+        
+        document.getElementById('auditPageSize').addEventListener('change', () => {
+            auditCurrentPage = 1;
+            loadAuditLogs();
+        });
+        
+        document.getElementById('auditRefreshBtn').addEventListener('click', loadAuditLogs);
+        
         loadAuditLogs();
     }
     
+    // Debounce helper
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+    
     async function loadAuditLogs() {
+        const content = document.getElementById('auditContent');
+        const pagination = document.getElementById('auditPagination');
+        const pageSize = parseInt(document.getElementById('auditPageSize')?.value || auditPageSize);
+        const skip = (auditCurrentPage - 1) * pageSize;
+        
+        content.innerHTML = '<p style="text-align: center;">⏳ Chargement...</p>';
+        
         try {
-            const response = await api.get('/audit/logs?limit=100');
-            const content = document.getElementById('auditContent');
+            let url = `/audit/logs?limit=${pageSize}&skip=${skip}`;
+            if (auditFilters.action) url += `&action=${auditFilters.action}`;
+            if (auditFilters.search) url += `&search=${encodeURIComponent(auditFilters.search)}`;
             
-            // L'API retourne {total, skip, limit, logs: [...]}
+            const response = await api.get(url);
             const logs = response?.logs || response || [];
+            const total = response?.total || logs.length;
+            const totalPages = Math.ceil(total / pageSize);
             
             if (!logs || !logs.length) {
-                content.innerHTML = '<p style="text-align: center; color: #666;">Aucun log d\'audit</p>';
+                content.innerHTML = '<p style="text-align: center; color: #666;">Aucun log d\'audit trouvé</p>';
+                pagination.innerHTML = '';
                 return;
             }
             
             content.innerHTML = `
+                <div style="margin-bottom: 10px; color: #666; display: flex; justify-content: space-between;">
+                    <span>Total: <strong>${total}</strong> logs</span>
+                    <span>Page ${auditCurrentPage} / ${totalPages}</span>
+                </div>
                 <div style="overflow-x: auto;">
-                    <p style="margin-bottom: 10px; color: #666;">Total: ${response?.total || logs.length} logs</p>
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr style="background: #f5f5f5;">
@@ -505,7 +579,7 @@ async function loadAdminPage(container) {
                         <tbody>
                             ${logs.map(log => `
                                 <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 10px;">${new Date(log.created_at).toLocaleString('fr-FR')}</td>
+                                    <td style="padding: 10px; white-space: nowrap;">${new Date(log.created_at).toLocaleString('fr-FR')}</td>
                                     <td style="padding: 10px;">${log.user_email || 'Système'}</td>
                                     <td style="padding: 10px;">
                                         <span style="padding: 2px 8px; border-radius: 4px; font-size: 0.85rem;
@@ -513,7 +587,7 @@ async function loadAdminPage(container) {
                                             ${log.action}
                                         </span>
                                     </td>
-                                    <td style="padding: 10px;">${log.entity_type || ''} ${log.entity_id || ''}</td>
+                                    <td style="padding: 10px;">${log.entity_type || ''} ${log.entity_id ? log.entity_id.substring(0, 8) + '...' : ''}</td>
                                     <td style="padding: 10px; font-family: monospace; font-size: 0.85rem;">${log.ip_address || '-'}</td>
                                 </tr>
                             `).join('')}
@@ -521,11 +595,70 @@ async function loadAdminPage(container) {
                     </table>
                 </div>
             `;
+            
+            // Pagination
+            renderAuditPagination(totalPages);
+            
         } catch (error) {
             console.error('Erreur chargement audit:', error);
-            document.getElementById('auditContent').innerHTML = '<p style="color: red;">Erreur chargement des logs</p>';
+            content.innerHTML = '<p style="color: red;">Erreur chargement des logs</p>';
+            pagination.innerHTML = '';
         }
     }
+    
+    function renderAuditPagination(totalPages) {
+        const pagination = document.getElementById('auditPagination');
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+        
+        let html = '';
+        
+        // Bouton précédent
+        html += `<button class="btn btn-sm ${auditCurrentPage === 1 ? 'btn-secondary disabled' : 'btn-primary'}" 
+            ${auditCurrentPage === 1 ? 'disabled' : ''} onclick="window.auditGoToPage(${auditCurrentPage - 1})">
+            ◀ Précédent
+        </button>`;
+        
+        // Numéros de page
+        const maxVisible = 5;
+        let startPage = Math.max(1, auditCurrentPage - Math.floor(maxVisible / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+        
+        if (endPage - startPage < maxVisible - 1) {
+            startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+        
+        if (startPage > 1) {
+            html += `<button class="btn btn-sm btn-secondary" onclick="window.auditGoToPage(1)">1</button>`;
+            if (startPage > 2) html += `<span style="padding: 0 8px;">...</span>`;
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            html += `<button class="btn btn-sm ${i === auditCurrentPage ? 'btn-primary' : 'btn-secondary'}" 
+                onclick="window.auditGoToPage(${i})">${i}</button>`;
+        }
+        
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) html += `<span style="padding: 0 8px;">...</span>`;
+            html += `<button class="btn btn-sm btn-secondary" onclick="window.auditGoToPage(${totalPages})">${totalPages}</button>`;
+        }
+        
+        // Bouton suivant
+        html += `<button class="btn btn-sm ${auditCurrentPage === totalPages ? 'btn-secondary disabled' : 'btn-primary'}" 
+            ${auditCurrentPage === totalPages ? 'disabled' : ''} onclick="window.auditGoToPage(${auditCurrentPage + 1})">
+            Suivant ▶
+        </button>`;
+        
+        pagination.innerHTML = html;
+    }
+    
+    // Exposer la fonction globalement pour les boutons onclick
+    window.auditGoToPage = function(page) {
+        auditCurrentPage = page;
+        loadAuditLogs();
+    };
     
     function getActionColor(action) {
         const colors = {
