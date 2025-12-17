@@ -125,7 +125,12 @@ async function loadAdminPage(container) {
     }
 
     
+    // Variables pagination utilisateurs
+    let usersCurrentPage = 1;
+    const usersPageSize = 10;
+    
     async function loadUsersTab() {
+        usersCurrentPage = 1;
         tabContent.innerHTML = `
             <div class="stats-row" id="userStats"></div>
             
@@ -149,9 +154,17 @@ async function loadAdminPage(container) {
                         <option value="active">Actifs</option>
                         <option value="inactive">Inactifs</option>
                     </select>
+                    <select id="usersPageSizeSelect">
+                        <option value="10">10 par page</option>
+                        <option value="25">25 par page</option>
+                        <option value="50">50 par page</option>
+                    </select>
                 </div>
                 
                 <div id="usersList"></div>
+                
+                <!-- Pagination utilisateurs -->
+                <div id="usersPagination" style="padding: 15px; border-top: 1px solid #eee; display: flex; justify-content: center; align-items: center; gap: 10px;"></div>
             </div>
             
             <!-- Modal création utilisateur -->
@@ -350,14 +363,60 @@ async function loadAdminPage(container) {
             filtered = filtered.filter(u => u.is_active === false);
         }
         
-        renderUsers(filtered);
+        // Pagination
+        const pageSize = parseInt(document.getElementById('usersPageSizeSelect')?.value || usersPageSize);
+        const totalPages = Math.ceil(filtered.length / pageSize);
+        usersCurrentPage = Math.min(usersCurrentPage, Math.max(1, totalPages));
+        
+        const start = (usersCurrentPage - 1) * pageSize;
+        const paginatedUsers = filtered.slice(start, start + pageSize);
+        
+        renderUsers(paginatedUsers);
+        renderUsersPagination(filtered.length, totalPages);
     }
+    
+    function renderUsersPagination(total, totalPages) {
+        const pagination = document.getElementById('usersPagination');
+        if (!pagination || totalPages <= 1) {
+            if (pagination) pagination.innerHTML = `<span style="color: #666;">Total: ${total} utilisateur(s)</span>`;
+            return;
+        }
+        
+        let html = `<span style="color: #666; margin-right: 15px;">Total: ${total} | Page ${usersCurrentPage}/${totalPages}</span>`;
+        
+        html += `<button class="btn btn-sm ${usersCurrentPage === 1 ? 'btn-secondary disabled' : 'btn-primary'}" 
+            ${usersCurrentPage === 1 ? 'disabled' : ''} onclick="window.usersGoToPage(${usersCurrentPage - 1})">◀</button>`;
+        
+        for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+            const page = totalPages <= 5 ? i : 
+                (usersCurrentPage <= 3 ? i : 
+                (usersCurrentPage >= totalPages - 2 ? totalPages - 5 + i : usersCurrentPage - 3 + i));
+            if (page > 0 && page <= totalPages) {
+                html += `<button class="btn btn-sm ${page === usersCurrentPage ? 'btn-primary' : 'btn-secondary'}" 
+                    onclick="window.usersGoToPage(${page})">${page}</button>`;
+            }
+        }
+        
+        html += `<button class="btn btn-sm ${usersCurrentPage === totalPages ? 'btn-secondary disabled' : 'btn-primary'}" 
+            ${usersCurrentPage === totalPages ? 'disabled' : ''} onclick="window.usersGoToPage(${usersCurrentPage + 1})">▶</button>`;
+        
+        pagination.innerHTML = html;
+    }
+    
+    window.usersGoToPage = function(page) {
+        usersCurrentPage = page;
+        filterUsers();
+    };
     
     function setupUsersEvents() {
         // Filtres
         document.getElementById('searchUsers')?.addEventListener('input', filterUsers);
         document.getElementById('filterRole')?.addEventListener('change', filterUsers);
         document.getElementById('filterStatus')?.addEventListener('change', filterUsers);
+        document.getElementById('usersPageSizeSelect')?.addEventListener('change', () => {
+            usersCurrentPage = 1;
+            filterUsers();
+        });
         
         // Bouton ajouter
         document.getElementById('addUserBtn')?.addEventListener('click', () => {
@@ -672,20 +731,44 @@ async function loadAdminPage(container) {
         return colors[action] || '#666';
     }
     
+    // Variables pagination sessions
+    let sessionsCurrentPage = 1;
+    let allSessions = [];
+    
     function loadSessionsTab() {
+        sessionsCurrentPage = 1;
         tabContent.innerHTML = `
             <div class="card">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2 class="card-title">🔐 Mes Sessions Actives</h2>
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <h2 class="card-title" style="margin: 0;">🔐 Mes Sessions Actives</h2>
                     <button id="logoutAllBtn" class="btn btn-danger">Déconnecter toutes les sessions</button>
                 </div>
+                
+                <div style="padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                    <select id="sessionsPageSizeSelect" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="10">10 par page</option>
+                        <option value="25">25 par page</option>
+                        <option value="50">50 par page</option>
+                    </select>
+                    <button id="sessionsRefreshBtn" class="btn btn-secondary" style="padding: 8px 16px;">🔄 Actualiser</button>
+                </div>
+                
                 <div id="sessionsContent" style="padding: 20px;">
                     <p>Chargement...</p>
                 </div>
+                
+                <div id="sessionsPagination" style="padding: 15px; border-top: 1px solid #eee; display: flex; justify-content: center; align-items: center; gap: 10px;"></div>
             </div>
         `;
         
         loadSessions();
+        
+        document.getElementById('sessionsPageSizeSelect')?.addEventListener('change', () => {
+            sessionsCurrentPage = 1;
+            renderSessions();
+        });
+        
+        document.getElementById('sessionsRefreshBtn')?.addEventListener('click', loadSessions);
         
         document.getElementById('logoutAllBtn')?.addEventListener('click', async () => {
             if (confirm('Déconnecter toutes vos sessions ? Vous serez redirigé vers la page de connexion.')) {
@@ -703,15 +786,37 @@ async function loadAdminPage(container) {
     
     async function loadSessions() {
         try {
-            const sessions = await api.get('/auth/sessions');
-            const content = document.getElementById('sessionsContent');
-            
-            if (!sessions || !sessions.length) {
-                content.innerHTML = '<p style="text-align: center; color: #666;">Aucune session active</p>';
-                return;
-            }
-            
-            content.innerHTML = sessions.map(session => `
+            allSessions = await api.get('/auth/sessions') || [];
+            renderSessions();
+        } catch (error) {
+            console.error('Erreur chargement sessions:', error);
+            document.getElementById('sessionsContent').innerHTML = '<p style="color: red;">Erreur chargement</p>';
+            document.getElementById('sessionsPagination').innerHTML = '';
+        }
+    }
+    
+    function renderSessions() {
+        const content = document.getElementById('sessionsContent');
+        const pagination = document.getElementById('sessionsPagination');
+        const pageSize = parseInt(document.getElementById('sessionsPageSizeSelect')?.value || 10);
+        
+        if (!allSessions || !allSessions.length) {
+            content.innerHTML = '<p style="text-align: center; color: #666;">Aucune session active</p>';
+            pagination.innerHTML = '';
+            return;
+        }
+        
+        const totalPages = Math.ceil(allSessions.length / pageSize);
+        sessionsCurrentPage = Math.min(sessionsCurrentPage, Math.max(1, totalPages));
+        
+        const start = (sessionsCurrentPage - 1) * pageSize;
+        const paginatedSessions = allSessions.slice(start, start + pageSize);
+        
+        content.innerHTML = `
+            <div style="margin-bottom: 10px; color: #666;">
+                Total: <strong>${allSessions.length}</strong> session(s) active(s)
+            </div>
+            ${paginatedSessions.map(session => `
                 <div class="user-card">
                     <div class="user-info">
                         <div class="user-email">
@@ -729,25 +834,58 @@ async function loadAdminPage(container) {
                         </button>
                     ` : ''}
                 </div>
-            `).join('');
-            
-            // Event listeners pour révoquer
-            content.querySelectorAll('.revoke-session-btn').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    try {
-                        await api.delete(`/auth/sessions/${btn.dataset.id}`);
-                        showToast('Session révoquée');
-                        loadSessions();
-                    } catch (error) {
-                        showToast('Erreur', 'error');
-                    }
-                });
+            `).join('')}
+        `;
+        
+        // Event listeners pour révoquer
+        content.querySelectorAll('.revoke-session-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                try {
+                    await api.delete(`/auth/sessions/${btn.dataset.id}`);
+                    showToast('Session révoquée');
+                    loadSessions();
+                } catch (error) {
+                    showToast('Erreur', 'error');
+                }
             });
-        } catch (error) {
-            console.error('Erreur chargement sessions:', error);
-            document.getElementById('sessionsContent').innerHTML = '<p style="color: red;">Erreur chargement</p>';
-        }
+        });
+        
+        // Pagination
+        renderSessionsPagination(totalPages);
     }
+    
+    function renderSessionsPagination(totalPages) {
+        const pagination = document.getElementById('sessionsPagination');
+        if (!pagination || totalPages <= 1) {
+            if (pagination) pagination.innerHTML = '';
+            return;
+        }
+        
+        let html = `<span style="color: #666; margin-right: 15px;">Page ${sessionsCurrentPage}/${totalPages}</span>`;
+        
+        html += `<button class="btn btn-sm ${sessionsCurrentPage === 1 ? 'btn-secondary disabled' : 'btn-primary'}" 
+            ${sessionsCurrentPage === 1 ? 'disabled' : ''} onclick="window.sessionsGoToPage(${sessionsCurrentPage - 1})">◀</button>`;
+        
+        for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+            const page = totalPages <= 5 ? i : 
+                (sessionsCurrentPage <= 3 ? i : 
+                (sessionsCurrentPage >= totalPages - 2 ? totalPages - 5 + i : sessionsCurrentPage - 3 + i));
+            if (page > 0 && page <= totalPages) {
+                html += `<button class="btn btn-sm ${page === sessionsCurrentPage ? 'btn-primary' : 'btn-secondary'}" 
+                    onclick="window.sessionsGoToPage(${page})">${page}</button>`;
+            }
+        }
+        
+        html += `<button class="btn btn-sm ${sessionsCurrentPage === totalPages ? 'btn-secondary disabled' : 'btn-primary'}" 
+            ${sessionsCurrentPage === totalPages ? 'disabled' : ''} onclick="window.sessionsGoToPage(${sessionsCurrentPage + 1})">▶</button>`;
+        
+        pagination.innerHTML = html;
+    }
+    
+    window.sessionsGoToPage = function(page) {
+        sessionsCurrentPage = page;
+        renderSessions();
+    };
     
     function parseUserAgent(ua) {
         if (!ua) return 'Inconnu';
