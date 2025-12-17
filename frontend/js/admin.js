@@ -250,8 +250,8 @@ async function loadAdminPage(container) {
     async function loadUsers() {
         try {
             allUsers = await api.get('/users');
-            renderUsers(allUsers);
             renderStats(allUsers);
+            filterUsers(); // Applique la pagination
         } catch (error) {
             console.error('Erreur chargement utilisateurs:', error);
             showToast('Erreur chargement utilisateurs', 'error');
