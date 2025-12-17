@@ -16,6 +16,7 @@ async function loadAdminPage(container) {
             <div class="admin-tabs mb-4">
                 ${isAdmin ? '<button class="admin-tab active" data-tab="users">👥 Utilisateurs</button>' : ''}
                 ${isAdmin ? '<button class="admin-tab" data-tab="audit">📋 Journal d\'Audit</button>' : ''}
+                ${isAdmin ? '<button class="admin-tab" data-tab="allSessions">🌐 Sessions Actives</button>' : ''}
                 <button class="admin-tab" data-tab="sessions">🔐 Mes Sessions</button>
                 ${isSuperAdmin ? '<button class="admin-tab" data-tab="system">🛠️ Système</button>' : ''}
             </div>
@@ -119,6 +120,7 @@ async function loadAdminPage(container) {
         switch(tabName) {
             case 'users': loadUsersTab(); break;
             case 'audit': loadAuditTab(); break;
+            case 'allSessions': loadAllSessionsTab(); break;
             case 'sessions': loadSessionsTab(); break;
             case 'system': loadSystemTab(); break;
         }
@@ -731,6 +733,182 @@ async function loadAdminPage(container) {
         return colors[action] || '#666';
     }
     
+    // ========== ONGLET TOUTES LES SESSIONS (ADMIN) ==========
+    let allActiveSessionsPage = 1;
+    let allActiveSessions = [];
+    
+    function loadAllSessionsTab() {
+        allActiveSessionsPage = 1;
+        tabContent.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🌐 Sessions Actives (Tous les utilisateurs)</h2>
+                </div>
+                
+                <div style="padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                    <input type="text" id="allSessionsSearch" placeholder="🔍 Rechercher par email..." 
+                        style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; min-width: 200px;">
+                    <select id="allSessionsPageSize" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="10">10 par page</option>
+                        <option value="25">25 par page</option>
+                        <option value="50">50 par page</option>
+                    </select>
+                    <button id="allSessionsRefreshBtn" class="btn btn-secondary" style="padding: 8px 16px;">🔄 Actualiser</button>
+                </div>
+                
+                <div id="allSessionsContent" style="padding: 20px;">
+                    <p>Chargement...</p>
+                </div>
+                
+                <div id="allSessionsPagination" style="padding: 15px; border-top: 1px solid #eee; display: flex; justify-content: center; align-items: center; gap: 10px;"></div>
+            </div>
+        `;
+        
+        loadAllActiveSessions();
+        
+        document.getElementById('allSessionsSearch')?.addEventListener('input', debounce(() => {
+            allActiveSessionsPage = 1;
+            renderAllActiveSessions();
+        }, 300));
+        
+        document.getElementById('allSessionsPageSize')?.addEventListener('change', () => {
+            allActiveSessionsPage = 1;
+            renderAllActiveSessions();
+        });
+        
+        document.getElementById('allSessionsRefreshBtn')?.addEventListener('click', loadAllActiveSessions);
+    }
+    
+    async function loadAllActiveSessions() {
+        try {
+            allActiveSessions = await api.get('/auth/admin/sessions') || [];
+            renderAllActiveSessions();
+        } catch (error) {
+            console.error('Erreur chargement sessions:', error);
+            document.getElementById('allSessionsContent').innerHTML = '<p style="color: red;">Erreur chargement des sessions</p>';
+        }
+    }
+    
+    function renderAllActiveSessions() {
+        const content = document.getElementById('allSessionsContent');
+        const pagination = document.getElementById('allSessionsPagination');
+        const pageSize = parseInt(document.getElementById('allSessionsPageSize')?.value || 10);
+        const search = document.getElementById('allSessionsSearch')?.value.toLowerCase() || '';
+        
+        // Filtrer par recherche
+        let filtered = allActiveSessions;
+        if (search) {
+            filtered = filtered.filter(s => 
+                s.user_email?.toLowerCase().includes(search) || 
+                s.user_name?.toLowerCase().includes(search)
+            );
+        }
+        
+        if (!filtered.length) {
+            content.innerHTML = '<p style="text-align: center; color: #666;">Aucune session active</p>';
+            pagination.innerHTML = '';
+            return;
+        }
+        
+        const totalPages = Math.ceil(filtered.length / pageSize);
+        allActiveSessionsPage = Math.min(allActiveSessionsPage, Math.max(1, totalPages));
+        
+        const start = (allActiveSessionsPage - 1) * pageSize;
+        const paginatedSessions = filtered.slice(start, start + pageSize);
+        
+        content.innerHTML = `
+            <div style="margin-bottom: 15px; color: #666;">
+                Total: <strong>${filtered.length}</strong> session(s) active(s)
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f5f5f5;">
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Utilisateur</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Rôle</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">IP</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Navigateur</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Dernière activité</th>
+                            <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${paginatedSessions.map(s => `
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 10px;">
+                                    <strong>${s.user_email}</strong>
+                                    ${s.user_name ? `<br><small style="color: #666;">${s.user_name}</small>` : ''}
+                                </td>
+                                <td style="padding: 10px;">
+                                    ${typeof createRoleBadge === 'function' ? createRoleBadge(s.user_role) : s.user_role}
+                                </td>
+                                <td style="padding: 10px; font-family: monospace; font-size: 0.85rem;">${s.ip_address || '-'}</td>
+                                <td style="padding: 10px;">${parseUserAgent(s.user_agent)}</td>
+                                <td style="padding: 10px;">${s.last_activity ? new Date(s.last_activity).toLocaleString('fr-FR') : '-'}</td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <button class="btn btn-sm btn-danger admin-revoke-session-btn" data-id="${s.id}" data-email="${s.user_email}">
+                                        Révoquer
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        // Event listeners pour révoquer
+        content.querySelectorAll('.admin-revoke-session-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (confirm(`Révoquer la session de ${btn.dataset.email} ?`)) {
+                    try {
+                        await api.delete(`/auth/admin/sessions/${btn.dataset.id}`);
+                        showToast('Session révoquée');
+                        loadAllActiveSessions();
+                    } catch (error) {
+                        showToast('Erreur', 'error');
+                    }
+                }
+            });
+        });
+        
+        // Pagination
+        renderAllSessionsPagination(totalPages);
+    }
+    
+    function renderAllSessionsPagination(totalPages) {
+        const pagination = document.getElementById('allSessionsPagination');
+        if (!pagination || totalPages <= 1) {
+            if (pagination) pagination.innerHTML = '';
+            return;
+        }
+        
+        let html = `<span style="color: #666; margin-right: 15px;">Page ${allActiveSessionsPage}/${totalPages}</span>`;
+        
+        html += `<button class="btn btn-sm ${allActiveSessionsPage === 1 ? 'btn-secondary disabled' : 'btn-primary'}" 
+            ${allActiveSessionsPage === 1 ? 'disabled' : ''} onclick="window.allSessionsGoToPage(${allActiveSessionsPage - 1})">◀</button>`;
+        
+        for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+            const page = totalPages <= 5 ? i : 
+                (allActiveSessionsPage <= 3 ? i : 
+                (allActiveSessionsPage >= totalPages - 2 ? totalPages - 5 + i : allActiveSessionsPage - 3 + i));
+            if (page > 0 && page <= totalPages) {
+                html += `<button class="btn btn-sm ${page === allActiveSessionsPage ? 'btn-primary' : 'btn-secondary'}" 
+                    onclick="window.allSessionsGoToPage(${page})">${page}</button>`;
+            }
+        }
+        
+        html += `<button class="btn btn-sm ${allActiveSessionsPage === totalPages ? 'btn-secondary disabled' : 'btn-primary'}" 
+            ${allActiveSessionsPage === totalPages ? 'disabled' : ''} onclick="window.allSessionsGoToPage(${allActiveSessionsPage + 1})">▶</button>`;
+        
+        pagination.innerHTML = html;
+    }
+    
+    window.allSessionsGoToPage = function(page) {
+        allActiveSessionsPage = page;
+        renderAllActiveSessions();
+    };
+
     // Variables pagination sessions
     let sessionsCurrentPage = 1;
     let allSessions = [];
