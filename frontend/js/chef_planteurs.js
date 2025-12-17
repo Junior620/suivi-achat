@@ -18,16 +18,26 @@ async function loadChefPlanteursPage(container) {
                 <div class="stat-value" id="fournisseursNonExploites" style="color: #dc3545;">-</div>
                 <div class="stat-label">❌ Non Exploités</div>
             </div>
+            <div class="stat-card" style="border-left: 4px solid #ffc107;">
+                <div class="stat-value" id="fournisseursEnAttente" style="color: #ffc107;">-</div>
+                <div class="stat-label">⏳ En Attente</div>
+            </div>
         </div>
 
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">Liste des Fournisseurs</h2>
-                <div style="display: flex; gap: 12px;">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                     <select id="statutFilter" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd;">
                         <option value="tous">Tous</option>
                         <option value="exploites">Exploités</option>
                         <option value="non-exploites">Non Exploités</option>
+                    </select>
+                    <select id="validationFilter" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #ddd;">
+                        <option value="tous">Tous statuts</option>
+                        <option value="validated">✅ Validés</option>
+                        <option value="pending">⏳ En attente</option>
+                        <option value="rejected">❌ Rejetés</option>
                     </select>
                 </div>
             </div>
@@ -79,6 +89,23 @@ async function loadChefPlanteursPage(container) {
                         <input type="number" id="quantite_max" step="1" min="1" required>
                         <small>Quantité maximale que le fournisseur peut fournir</small>
                     </div>
+                    
+                    <hr style="margin: 20px 0; border: 1px solid #e0e0e0;">
+                    <h4 style="color: var(--primary);">📍 Géolocalisation</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Latitude</label>
+                            <input type="number" id="latitude" step="0.000001" min="-90" max="90" placeholder="Ex: 3.8480">
+                        </div>
+                        <div class="form-group">
+                            <label>Longitude</label>
+                            <input type="number" id="longitude" step="0.000001" min="-180" max="180" placeholder="Ex: 11.5021">
+                        </div>
+                    </div>
+                    <button type="button" id="getLocationBtn" class="btn btn-secondary" style="width: 100%; margin-bottom: 15px;">
+                        📍 Obtenir ma position actuelle
+                    </button>
+                    <small id="locationStatus" style="display: block; text-align: center; color: #666;"></small>
                     
                     <hr style="margin: 20px 0; border: 1px solid #e0e0e0;">
                     <h4 style="color: var(--primary);">📅 Informations Contrat</h4>
@@ -274,12 +301,14 @@ async function loadChefPlanteursPage(container) {
         
         // Calculer les statistiques
         const totalFournisseurs = data.length;
-        const exploites = data.filter(c => c.est_exploite).length;
-        const nonExploites = totalFournisseurs - exploites;
+        const exploites = data.filter(c => c.est_exploite && c.validation_status === 'validated').length;
+        const nonExploites = data.filter(c => !c.est_exploite && c.validation_status === 'validated').length;
+        const enAttente = data.filter(c => c.validation_status === 'pending').length;
         
         document.getElementById('totalFournisseurs').textContent = totalFournisseurs;
         document.getElementById('fournisseursExploites').textContent = exploites;
         document.getElementById('fournisseursNonExploites').textContent = nonExploites;
+        document.getElementById('fournisseursEnAttente').textContent = enAttente;
         
         if (table) {
             table.setData(data);
@@ -303,6 +332,16 @@ async function loadChefPlanteursPage(container) {
                     }
                 },
                 columns: [
+                    {title: "Validation", field: "validation_status", minWidth: 110, hozAlign: "center", formatter: (cell) => {
+                        const status = cell.getValue() || 'validated';
+                        if (status === 'validated') {
+                            return '<span style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">✅ Validé</span>';
+                        } else if (status === 'pending') {
+                            return '<span style="background: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">⏳ En attente</span>';
+                        } else {
+                            return '<span style="background: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">❌ Rejeté</span>';
+                        }
+                    }},
                     {title: "Statut", field: "est_exploite", minWidth: 100, hozAlign: "center", formatter: (cell) => {
                         const value = cell.getValue();
                         if (value) {
@@ -337,9 +376,19 @@ async function loadChefPlanteursPage(container) {
                         const row = cell.getRow().getData();
                         return getProgressBar(row.pourcentage_utilise);
                     }},
-                    {title: "Actions", minWidth: 100, formatter: (cell) => {
+                    {title: "Actions", minWidth: 150, formatter: (cell) => {
+                        const row = cell.getRow().getData();
                         const canEdit = currentUser.role !== 'viewer';
-                        return canEdit ? '<button class="btn-edit">✏️</button> <button class="btn-delete">🗑️</button>' : '';
+                        const canValidate = currentUser.role === 'superadmin' && row.validation_status === 'pending';
+                        let buttons = '';
+                        if (canValidate) {
+                            buttons += '<button class="btn-validate" title="Valider" style="background:#28a745;color:white;border:none;padding:4px 8px;border-radius:4px;margin-right:4px;">✓</button>';
+                            buttons += '<button class="btn-reject" title="Rejeter" style="background:#dc3545;color:white;border:none;padding:4px 8px;border-radius:4px;margin-right:4px;">✗</button>';
+                        }
+                        if (canEdit) {
+                            buttons += '<button class="btn-edit">✏️</button> <button class="btn-delete">🗑️</button>';
+                        }
+                        return buttons;
                     }, cellClick: handleTableAction}
                 ]
             });
@@ -368,11 +417,42 @@ async function loadChefPlanteursPage(container) {
     function handleTableAction(e, cell) {
         const row = cell.getRow().getData();
         if (e.target.classList.contains('btn-edit')) {
-            e.stopPropagation(); // Empêcher l'ouverture du modal de visualisation
+            e.stopPropagation();
             openEditModal(row);
         } else if (e.target.classList.contains('btn-delete')) {
-            e.stopPropagation(); // Empêcher l'ouverture du modal de visualisation
+            e.stopPropagation();
             deleteChef(row.id);
+        } else if (e.target.classList.contains('btn-validate')) {
+            e.stopPropagation();
+            validateChef(row.id, row.name, 'validate');
+        } else if (e.target.classList.contains('btn-reject')) {
+            e.stopPropagation();
+            validateChef(row.id, row.name, 'reject');
+        }
+    }
+    
+    async function validateChef(id, name, action) {
+        if (action === 'validate') {
+            if (confirm(`Valider le fournisseur "${name}" ?`)) {
+                try {
+                    await api.post(`/chef-planteurs/${id}/validate`, { action: 'validate' });
+                    showToast('Fournisseur validé avec succès');
+                    loadTable();
+                } catch (error) {
+                    showToast(error.message || 'Erreur lors de la validation', 'error');
+                }
+            }
+        } else {
+            const reason = prompt(`Raison du rejet pour "${name}" :`);
+            if (reason) {
+                try {
+                    await api.post(`/chef-planteurs/${id}/validate`, { action: 'reject', rejection_reason: reason });
+                    showToast('Fournisseur rejeté');
+                    loadTable();
+                } catch (error) {
+                    showToast(error.message || 'Erreur lors du rejet', 'error');
+                }
+            }
         }
     }
     
@@ -586,6 +666,8 @@ async function loadChefPlanteursPage(container) {
         document.getElementById('date_debut_contrat').value = chef.date_debut_contrat || '';
         document.getElementById('date_fin_contrat').value = chef.date_fin_contrat || '';
         document.getElementById('raison_fin_contrat').value = chef.raison_fin_contrat || '';
+        document.getElementById('latitude').value = chef.latitude || '';
+        document.getElementById('longitude').value = chef.longitude || '';
         document.getElementById('chefForm').dataset.editId = chef.id;
         
         // Charger les planteurs et sélectionner ceux déjà assignés
@@ -659,16 +741,71 @@ async function loadChefPlanteursPage(container) {
     });
     
     // Gestion du filtre de statut
-    document.getElementById('statutFilter').addEventListener('change', (e) => {
-        const filtre = e.target.value;
+    document.getElementById('statutFilter').addEventListener('change', applyFilters);
+    document.getElementById('validationFilter').addEventListener('change', applyFilters);
+    
+    function applyFilters() {
+        const statutFiltre = document.getElementById('statutFilter').value;
+        const validationFiltre = document.getElementById('validationFilter').value;
         
-        if (filtre === 'tous') {
-            table.clearFilter();
-        } else if (filtre === 'exploites') {
-            table.setFilter('est_exploite', '=', true);
-        } else if (filtre === 'non-exploites') {
-            table.setFilter('est_exploite', '=', false);
+        table.clearFilter();
+        
+        const filters = [];
+        
+        if (statutFiltre === 'exploites') {
+            filters.push({field: 'est_exploite', type: '=', value: true});
+        } else if (statutFiltre === 'non-exploites') {
+            filters.push({field: 'est_exploite', type: '=', value: false});
         }
+        
+        if (validationFiltre !== 'tous') {
+            filters.push({field: 'validation_status', type: '=', value: validationFiltre});
+        }
+        
+        if (filters.length > 0) {
+            table.setFilter(filters);
+        }
+    }
+    
+    // Géolocalisation
+    document.getElementById('getLocationBtn')?.addEventListener('click', () => {
+        const statusEl = document.getElementById('locationStatus');
+        statusEl.textContent = '⏳ Obtention de la position...';
+        statusEl.style.color = '#666';
+        
+        if (!navigator.geolocation) {
+            statusEl.textContent = '❌ Géolocalisation non supportée par ce navigateur';
+            statusEl.style.color = '#dc3545';
+            return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+                document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+                statusEl.textContent = '✅ Position obtenue avec succès';
+                statusEl.style.color = '#28a745';
+            },
+            (error) => {
+                let message = '❌ Erreur: ';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        message += 'Permission refusée';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        message += 'Position non disponible';
+                        break;
+                    case error.TIMEOUT:
+                        message += 'Délai dépassé';
+                        break;
+                    default:
+                        message += 'Erreur inconnue';
+                }
+                statusEl.textContent = message;
+                statusEl.style.color = '#dc3545';
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
     });
 
     document.querySelectorAll('.close, .close-modal').forEach(el => {
@@ -767,7 +904,9 @@ async function loadChefPlanteursPage(container) {
             quantite_max_kg: parseFloat(document.getElementById('quantite_max').value),
             date_debut_contrat: document.getElementById('date_debut_contrat').value || null,
             date_fin_contrat: document.getElementById('date_fin_contrat').value || null,
-            raison_fin_contrat: document.getElementById('raison_fin_contrat').value || null
+            raison_fin_contrat: document.getElementById('raison_fin_contrat').value || null,
+            latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
+            longitude: document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null
         };
 
         // Récupérer les planteurs sélectionnés

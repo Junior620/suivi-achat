@@ -15,12 +15,24 @@ def get_chef_planteur(db: Session, chef_id: UUID):
         raise HTTPException(status_code=404, detail="Chef planteur not found")
     return chef
 
-def create_chef_planteur(db: Session, chef_data: ChefPlanteurCreate, current_user_id: Optional[UUID] = None):
+def create_chef_planteur(db: Session, chef_data: ChefPlanteurCreate, current_user_id: Optional[UUID] = None, user_role: str = None):
+    from datetime import datetime
+    
     existing = db.query(ChefPlanteur).filter(ChefPlanteur.name == chef_data.name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Un chef planteur avec ce nom existe déjà")
     
     chef = ChefPlanteur(**chef_data.model_dump())
+    chef.created_by = current_user_id
+    
+    # Si superadmin, valider directement. Sinon, mettre en attente
+    if user_role == 'superadmin':
+        chef.validation_status = 'validated'
+        chef.validated_by = current_user_id
+        chef.validated_at = datetime.utcnow()
+    else:
+        chef.validation_status = 'pending'
+    
     db.add(chef)
     db.commit()
     db.refresh(chef)
@@ -28,9 +40,49 @@ def create_chef_planteur(db: Session, chef_data: ChefPlanteurCreate, current_use
     # Créer une notification
     if current_user_id:
         from . import notification_service
-        notification_service.create_action_notification(
-            db, 'create', 'fournisseur', chef.name, chef.id, current_user_id, ['admin']
-        )
+        if chef.validation_status == 'pending':
+            notification_service.create_action_notification(
+                db, 'create', 'fournisseur (en attente)', chef.name, chef.id, current_user_id, ['superadmin']
+            )
+        else:
+            notification_service.create_action_notification(
+                db, 'create', 'fournisseur', chef.name, chef.id, current_user_id, ['admin']
+            )
+    
+    return chef
+
+
+def validate_chef_planteur(db: Session, chef_id: UUID, action: str, current_user_id: UUID, rejection_reason: str = None):
+    """Valider ou rejeter un fournisseur"""
+    from datetime import datetime
+    
+    chef = get_chef_planteur(db, chef_id)
+    
+    if chef.validation_status != 'pending':
+        raise HTTPException(status_code=400, detail="Ce fournisseur n'est pas en attente de validation")
+    
+    if action == 'validate':
+        chef.validation_status = 'validated'
+        chef.validated_by = current_user_id
+        chef.validated_at = datetime.utcnow()
+        chef.rejection_reason = None
+    elif action == 'reject':
+        if not rejection_reason:
+            raise HTTPException(status_code=400, detail="La raison du rejet est obligatoire")
+        chef.validation_status = 'rejected'
+        chef.validated_by = current_user_id
+        chef.validated_at = datetime.utcnow()
+        chef.rejection_reason = rejection_reason
+    
+    db.commit()
+    db.refresh(chef)
+    
+    # Notification
+    from . import notification_service
+    action_text = 'validé' if action == 'validate' else 'rejeté'
+    notification_service.create_action_notification(
+        db, 'update', f'fournisseur {action_text}', chef.name, chef.id, current_user_id, ['admin', 'manager']
+    )
     
     return chef
 
@@ -109,6 +161,11 @@ def get_production_stats(db: Session, chef_id: UUID):
         "id": chef.id,
         "name": chef.name,
         "phone": chef.phone,
+        "cni": chef.cni,
+        "cooperative": chef.cooperative,
+        "region": chef.region,
+        "departement": chef.departement,
+        "localite": chef.localite,
         "quantite_max_kg": quantite_max_chef,
         "total_livre_kg": total_livre,
         "total_limite_planteurs_kg": total_limite_planteurs,
@@ -117,6 +174,16 @@ def get_production_stats(db: Session, chef_id: UUID):
         "nombre_planteurs": len(planteurs),
         "est_exploite": len(planteurs) > 0,
         "alerte": alerte,
+        "latitude": chef.latitude,
+        "longitude": chef.longitude,
+        "validation_status": getattr(chef, 'validation_status', 'validated'),
+        "validated_by": getattr(chef, 'validated_by', None),
+        "validated_at": getattr(chef, 'validated_at', None),
+        "rejection_reason": getattr(chef, 'rejection_reason', None),
+        "created_by": getattr(chef, 'created_by', None),
+        "date_debut_contrat": chef.date_debut_contrat,
+        "date_fin_contrat": chef.date_fin_contrat,
+        "raison_fin_contrat": chef.raison_fin_contrat,
         "created_at": chef.created_at,
         "updated_at": chef.updated_at
     }

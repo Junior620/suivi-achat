@@ -37,8 +37,8 @@ class PlanterResponse(PlanterBase):
     departement: Optional[str] = None
     localite: Optional[str] = None
     statut_plantation: Optional[str] = None
-    superficie_hectares: Optional[float] = None  # Optionnel pour les anciens planteurs
-    chef_planteur_id: Optional[UUID] = None  # Optionnel pour les anciens planteurs
+    superficie_hectares: Optional[float] = None
+    chef_planteur_id: Optional[UUID] = None
     created_at: datetime
     updated_at: datetime
     chef_planteur_name: Optional[str] = None

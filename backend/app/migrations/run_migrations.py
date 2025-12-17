@@ -110,6 +110,77 @@ def run_startup_migrations(engine):
             END IF;
         END $$;
         """,
+        # ========== MIGRATIONS PLANTERS (Validation + Géolocalisation) ==========
+        # Ajouter latitude à planters
+        """
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name='planters' AND column_name='latitude') THEN
+                ALTER TABLE planters ADD COLUMN latitude DOUBLE PRECISION;
+            END IF;
+        END $$;
+        """,
+        # Ajouter longitude à planters
+        """
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name='planters' AND column_name='longitude') THEN
+                ALTER TABLE planters ADD COLUMN longitude DOUBLE PRECISION;
+            END IF;
+        END $$;
+        """,
+        # Ajouter validation_status à planters (default validated pour les existants)
+        """
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name='planters' AND column_name='validation_status') THEN
+                ALTER TABLE planters ADD COLUMN validation_status VARCHAR(20) DEFAULT 'validated' NOT NULL;
+            END IF;
+        END $$;
+        """,
+        # Ajouter validated_by à planters
+        """
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name='planters' AND column_name='validated_by') THEN
+                ALTER TABLE planters ADD COLUMN validated_by UUID;
+            END IF;
+        END $$;
+        """,
+        # Ajouter validated_at à planters
+        """
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name='planters' AND column_name='validated_at') THEN
+                ALTER TABLE planters ADD COLUMN validated_at TIMESTAMP;
+            END IF;
+        END $$;
+        """,
+        # Ajouter rejection_reason à planters
+        """
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name='planters' AND column_name='rejection_reason') THEN
+                ALTER TABLE planters ADD COLUMN rejection_reason VARCHAR(500);
+            END IF;
+        END $$;
+        """,
+        # Ajouter created_by à planters
+        """
+        DO $$ 
+        BEGIN 
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                          WHERE table_name='planters' AND column_name='created_by') THEN
+                ALTER TABLE planters ADD COLUMN created_by UUID;
+            END IF;
+        END $$;
+        """,
     ]
     
     with engine.connect() as conn:
